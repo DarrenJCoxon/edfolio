@@ -61,6 +61,9 @@
   --secondary: #F3F4F6;
   --secondary-foreground: #1A1A1A;
   --destructive: #EF4444;
+  --destructive-foreground: #DC2626;
+  --destructive-border: #EF4444;
+  --destructive-bg: #FEF2F2;
   --input: #E5E7EB;
   --ring: #3B82F6;
 
@@ -125,6 +128,9 @@
     --secondary: #374151;
     --secondary-foreground: #F3F4F6;
     --destructive: #EF4444;
+    --destructive-foreground: #FCA5A5;
+    --destructive-border: #EF4444;
+    --destructive-bg: #450a0a;
     --input: #374151;
     --ring: #3B82F6;
 
