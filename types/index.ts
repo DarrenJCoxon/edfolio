@@ -3,33 +3,38 @@
 export interface User {
   id: string;
   email: string;
-  vaults: Vault[];
+  folios: Folio[];
 }
 
-export interface Vault {
+export interface Folio {
   id: string;
   name: string;
   ownerId: string;
-  folders: Folder[];
-  notes: Note[];
+  folders?: Folder[];
+  notes?: Note[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Folder {
   id: string;
   name: string;
-  vaultId: string;
+  folioId: string;
   parentId: string | null;
-  children: Folder[];
-  notes: Note[];
+  children?: Folder[];
+  notes?: Note[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Note {
   id: string;
   title: string;
-  content: unknown; // TipTap JSON content
-  updatedAt: Date;
-  vaultId: string;
+  content?: unknown;
+  folioId: string;
   folderId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Component prop types
@@ -56,6 +61,6 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export interface AppState {
   theme: ThemeMode;
   activeNoteId: string | null;
-  activeVaultId: string | null;
+  activeFolioId: string | null;
   sidebarCollapsed: boolean;
 }
