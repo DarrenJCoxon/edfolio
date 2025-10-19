@@ -53,7 +53,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
-  vaults   Vault[]
+  folios   Folio[]
 
   @@index([email])
 }
@@ -67,14 +67,50 @@ model VerificationToken {
 }
 
 // Application Models
-model Vault {
+model Folio {
   id        String   @id @default(cuid())
   name      String
   ownerId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  folders Folder[]
+  notes   Note[]
 
   @@index([ownerId])
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  folioId   String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  folio    Folio    @relation(fields: [folioId], references: [id], onDelete: Cascade)
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderHierarchy")
+  notes    Note[]
+
+  @@index([folioId])
+  @@index([parentId])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String   @default("Untitled")
+  content   Json     @default("{}")
+  folioId   String
+  folderId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  folio  Folio   @relation(fields: [folioId], references: [id], onDelete: Cascade)
+  folder Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([folioId])
+  @@index([folderId])
+  @@index([updatedAt])
 }

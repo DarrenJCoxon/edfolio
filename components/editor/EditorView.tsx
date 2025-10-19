@@ -17,10 +17,10 @@ export function EditorView({ className }: EditorViewProps) {
         <div className="max-w-4xl mx-auto p-[var(--spacing-xl)]">
           {/* Placeholder content */}
           <h1 className="text-4xl font-bold text-[var(--foreground)] mb-[var(--spacing-md)]">
-            Welcome to Kanvas
+            Welcome to edfolio
           </h1>
           <p className="text-lg text-[var(--muted)] mb-[var(--spacing-lg)]">
-            Your sanctuary for thought.
+            Your educational portfolio platform.
           </p>
           <div className="prose prose-neutral dark:prose-invert max-w-none">
             <p className="text-[var(--foreground)]">
@@ -32,7 +32,7 @@ export function EditorView({ className }: EditorViewProps) {
             </p>
             <ul className="text-[var(--foreground)]">
               <li><strong>Action Rail</strong> - The leftmost vertical rail with global actions</li>
-              <li><strong>File Navigator</strong> - The sidebar for managing your vault structure</li>
+              <li><strong>File Navigator</strong> - The sidebar for managing your folio structure</li>
               <li><strong>Editor View</strong> - This main area for writing and editing</li>
             </ul>
           </div>
