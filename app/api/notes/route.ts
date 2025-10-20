@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/notes - Create a new note
 export async function POST(request: NextRequest) {
-  let body: any;
+  let body: unknown;
   try {
     // Verify authentication
     const session = await auth();

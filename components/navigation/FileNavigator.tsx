@@ -26,9 +26,11 @@ export function FileNavigator({ className }: FileNavigatorProps) {
     activeNoteId,
     expandedFolderIds,
     sidebarCollapsed,
+    selectedFolderId,
     setActiveNote,
     toggleFolderExpanded,
     toggleSidebar,
+    setSelectedFolder,
   } = useFoliosStore();
 
   const { isLoading } = useFolioData();
@@ -152,7 +154,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => openCreateDialog('folder')}
+              onClick={() => openCreateDialog('folder', selectedFolderId || undefined)}
               aria-label="New folder"
               className="h-8 w-8"
               title="New folder"
@@ -162,7 +164,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => openCreateDialog('note')}
+              onClick={() => openCreateDialog('note', selectedFolderId || undefined)}
               aria-label="New note"
               className="h-8 w-8"
               title="New note"
@@ -204,6 +206,8 @@ export function FileNavigator({ className }: FileNavigatorProps) {
                 onDelete={(type, id, name) => openDeleteDialog(type, id, name)}
                 onCreateNote={(parentId) => openCreateDialog('note', parentId)}
                 onCreateFolder={(parentId) => openCreateDialog('folder', parentId)}
+                selectedFolderId={selectedFolderId}
+                onSelectFolder={setSelectedFolder}
               />
             )}
           </div>

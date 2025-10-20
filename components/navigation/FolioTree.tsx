@@ -20,6 +20,8 @@ interface FolioTreeProps {
   onDelete: (type: 'folder' | 'note', id: string, name: string) => void;
   onCreateNote: (parentId?: string) => void;
   onCreateFolder: (parentId?: string) => void;
+  selectedFolderId: string | null;
+  onSelectFolder: (id: string | null) => void;
 }
 
 export function FolioTree({
@@ -34,6 +36,8 @@ export function FolioTree({
   onDelete,
   onCreateNote,
   onCreateFolder,
+  selectedFolderId,
+  onSelectFolder,
 }: FolioTreeProps) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemType, setEditingItemType] = useState<'folder' | 'note' | null>(null);
@@ -119,6 +123,8 @@ export function FolioTree({
               setEditingItemId(folder.id);
               setEditingItemType('folder');
             }}
+            isSelected={selectedFolderId === folder.id}
+            onSelect={onSelectFolder}
           />
         </FolderContextMenu>
 
