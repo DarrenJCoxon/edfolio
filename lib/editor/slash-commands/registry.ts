@@ -22,6 +22,9 @@ import {
   type CommandActionParams,
 } from './types';
 
+import { tableCommands } from '../table-commands';
+import { imageCommands } from '../image-commands';
+
 // Document formatting commands
 const formatCommands: SlashCommandItem[] = [
   {
@@ -207,7 +210,11 @@ const formatCommands: SlashCommandItem[] = [
 ];
 
 // Export all commands
-export const allCommands: SlashCommandItem[] = [...formatCommands];
+export const allCommands: SlashCommandItem[] = [
+  ...formatCommands,
+  ...tableCommands,
+  ...imageCommands,
+];
 
 // Get commands for a specific context
 export function getCommandsForContext(context: CommandContext): SlashCommandItem[] {
