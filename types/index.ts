@@ -54,6 +54,22 @@ export interface EditorViewProps {
   note?: Note | null;
 }
 
+export interface TipTapEditorProps {
+  content: unknown;
+  onChange: (content: unknown) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  editable?: boolean;
+  className?: string;
+}
+
+export interface SaveIndicatorProps {
+  status: 'idle' | 'saving' | 'saved' | 'error';
+  error?: Error | null;
+  className?: string;
+}
+
 // Layout types
 
 export type ThemeMode = 'light' | 'dark' | 'system';

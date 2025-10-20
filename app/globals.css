@@ -163,3 +163,31 @@ html, body {
   overflow-x: hidden;
   height: 100%;
 }
+
+/* TipTap Editor Styles */
+.tiptap-editor {
+  /* Placeholder styling */
+  .tiptap p.is-editor-empty:first-child::before {
+    color: var(--muted);
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  /* Focus styles */
+  .ProseMirror:focus {
+    outline: none;
+  }
+
+  /* Ensure proper paragraph spacing */
+  .ProseMirror p {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  /* First paragraph no top margin */
+  .ProseMirror p:first-child {
+    margin-top: 0;
+  }
+}
