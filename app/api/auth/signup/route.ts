@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user and default vault in a transaction
+    // Create user and default folio in a transaction
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create default vault for user
-      await tx.vault.create({
+      // Create default folio for user
+      await tx.folio.create({
         data: {
-          name: 'My Vault',
+          name: 'My Folio',
           ownerId: newUser.id,
         },
       });

@@ -1,46 +1,45 @@
 'use client';
 
-import { useEditor, EditorContent, Content } from '@tiptap/react';
+import { useEditor, EditorContent, type Content } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { Callout } from '@/lib/editor/callout';
+import { SlashCommands } from '@/lib/editor/slash-commands/extension';
 
 export interface TipTapEditorProps {
   content: unknown;
   onChange: (content: unknown) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  placeholder?: string;
   editable?: boolean;
+  placeholder?: string;
   className?: string;
 }
 
 export function TipTapEditor({
   content,
   onChange,
-  onFocus,
-  onBlur,
-  placeholder = 'Start writing...',
   editable = true,
+  placeholder = 'Start typing...',
   className,
 }: TipTapEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false, // Required for Next.js 15 compatibility
     extensions: [
       StarterKit,
       Placeholder.configure({
         placeholder,
       }),
       Typography,
+      Callout,
+      SlashCommands,
     ],
     content: content as Content,
     editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());
     },
-    onFocus,
-    onBlur,
     editorProps: {
       attributes: {
         class: cn(
@@ -53,32 +52,33 @@ export function TipTapEditor({
     },
   });
 
-  // Update editor content when prop changes (e.g., switching notes)
+  // Update editor content when prop changes (for note switching)
   useEffect(() => {
-    if (editor && content !== editor.getJSON()) {
-      editor.commands.setContent(content as Content);
-    }
-  }, [editor, content]);
+    if (editor && content !== undefined) {
+      const currentContent = editor.getJSON();
+      const newContent = content as Content;
 
-  // Update editable state
+      // Only update if content actually changed to prevent unnecessary re-renders
+      if (JSON.stringify(currentContent) !== JSON.stringify(newContent)) {
+        editor.commands.setContent(newContent);
+      }
+    }
+  }, [content, editor]);
+
+  // Update editable state when prop changes
   useEffect(() => {
-    if (editor) {
+    if (editor && editor.isEditable !== editable) {
       editor.setEditable(editable);
     }
-  }, [editor, editable]);
+  }, [editable, editor]);
 
   if (!editor) {
     return null;
   }
 
   return (
-    <EditorContent
-      editor={editor}
-      className={cn(
-        'w-full h-full',
-        'tiptap-editor',
-        className
-      )}
-    />
+    <div className={cn('tiptap-editor', className)}>
+      <EditorContent editor={editor} />
+    </div>
   );
 }

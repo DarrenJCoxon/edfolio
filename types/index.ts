@@ -1,4 +1,4 @@
-// Core data types (will match Prisma models later)
+// Core data types (match Prisma models)
 
 export interface User {
   id: string;
@@ -10,8 +10,8 @@ export interface Folio {
   id: string;
   name: string;
   ownerId: string;
-  folders?: Folder[];
-  notes?: Note[];
+  folders: Folder[];
+  notes: Note[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,8 +21,8 @@ export interface Folder {
   name: string;
   folioId: string;
   parentId: string | null;
-  children?: Folder[];
-  notes?: Note[];
+  children: Folder[];
+  notes: Note[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,11 +30,45 @@ export interface Folder {
 export interface Note {
   id: string;
   title: string;
-  content?: unknown;
+  content: unknown; // TipTap JSON content
   folioId: string;
   folderId: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Auto-save types
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+export interface AutoSaveOptions {
+  noteId: string;
+  initialContent: unknown;
+  delay?: number;
+  onSaveSuccess?: () => void;
+  onSaveError?: (error: Error) => void;
+}
+
+export interface AutoSaveReturn {
+  saveStatus: SaveStatus;
+  save: (content: unknown) => void;
+  forceSave: () => Promise<void>;
+  error: Error | null;
+}
+
+// TipTap Editor types
+export interface TipTapEditorProps {
+  content: unknown;
+  onChange: (content: unknown) => void;
+  editable?: boolean;
+  placeholder?: string;
+  className?: string;
+}
+
+// Save Indicator types
+export interface SaveIndicatorProps {
+  status: SaveStatus;
+  error?: Error | null;
+  className?: string;
 }
 
 // Component prop types
@@ -54,22 +88,6 @@ export interface EditorViewProps {
   note?: Note | null;
 }
 
-export interface TipTapEditorProps {
-  content: unknown;
-  onChange: (content: unknown) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  placeholder?: string;
-  editable?: boolean;
-  className?: string;
-}
-
-export interface SaveIndicatorProps {
-  status: 'idle' | 'saving' | 'saved' | 'error';
-  error?: Error | null;
-  className?: string;
-}
-
 // Layout types
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -77,6 +95,6 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export interface AppState {
   theme: ThemeMode;
   activeNoteId: string | null;
-  activeFolioId: string | null;
+  activeVaultId: string | null;
   sidebarCollapsed: boolean;
 }

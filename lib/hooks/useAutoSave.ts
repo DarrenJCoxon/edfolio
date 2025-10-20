@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import debounce from 'lodash.debounce';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export interface AutoSaveOptions {
-  noteId: string | null;
+  noteId: string;
   initialContent: unknown;
-  delay?: number; // Default 500ms per CLAUDE.md
+  delay?: number;
   onSaveSuccess?: () => void;
   onSaveError?: (error: Error) => void;
 }
@@ -16,7 +15,7 @@ export interface AutoSaveOptions {
 export interface AutoSaveReturn {
   saveStatus: SaveStatus;
   save: (content: unknown) => void;
-  forceSave: () => void;
+  forceSave: () => Promise<void>;
   error: Error | null;
 }
 
@@ -29,77 +28,112 @@ export function useAutoSave({
 }: AutoSaveOptions): AutoSaveReturn {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [error, setError] = useState<Error | null>(null);
-  const contentRef = useRef(initialContent);
-  const isMountedRef = useRef(true);
+  const contentRef = useRef<unknown>(initialContent);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Actual save function that calls the API
-  const performSave = useCallback(async () => {
-    if (!noteId) return;
-
-    setSaveStatus('saving');
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: contentRef.current }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save note');
+  // Perform the actual save operation
+  const performSave = useCallback(
+    async (noteIdToSave: string, content: unknown) => {
+      // Don't attempt to save if no noteId
+      if (!noteIdToSave) {
+        return;
       }
 
-      if (isMountedRef.current) {
+      try {
+        setSaveStatus('saving');
+        setError(null);
+
+        const response = await fetch(`/api/notes/${noteIdToSave}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to save note');
+        }
+
         setSaveStatus('saved');
         onSaveSuccess?.();
 
         // Reset to idle after 2 seconds
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            setSaveStatus('idle');
-          }
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => {
+          setSaveStatus('idle');
         }, 2000);
-      }
-    } catch (err) {
-      const saveError = err instanceof Error ? err : new Error('Unknown error');
-      if (isMountedRef.current) {
-        setSaveStatus('error');
+      } catch (err) {
+        const saveError = err instanceof Error ? err : new Error('Unknown error');
         setError(saveError);
+        setSaveStatus('error');
         onSaveError?.(saveError);
       }
-    }
-  }, [noteId, onSaveSuccess, onSaveError]);
-
-  // Debounced save function
-  const debouncedSave = useRef(
-    debounce(() => {
-      performSave();
-    }, delay)
-  ).current;
-
-  // Save function that updates content and triggers debounced save
-  const save = useCallback(
-    (content: unknown) => {
-      contentRef.current = content;
-      debouncedSave();
     },
-    [debouncedSave]
+    [onSaveSuccess, onSaveError]
   );
 
-  // Force immediate save (for Cmd+S)
-  const forceSave = useCallback(() => {
-    debouncedSave.cancel();
-    performSave();
-  }, [debouncedSave, performSave]);
+  // Create a stable debounced save function using useRef
+  const debouncedSaveRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cleanup on unmount
+  // Save function that triggers debounced save
+  const save = useCallback(
+    (content: unknown) => {
+      // Don't attempt to save if no noteId
+      if (!noteId) {
+        return;
+      }
+
+      // Store the content
+      contentRef.current = content;
+
+      // Cancel any existing timeout
+      if (debouncedSaveRef.current) {
+        clearTimeout(debouncedSaveRef.current);
+      }
+
+      // Set a new timeout
+      debouncedSaveRef.current = setTimeout(() => {
+        performSave(noteId, content);
+      }, delay);
+    },
+    [noteId, performSave, delay]
+  );
+
+  // Force save function for manual save (Cmd+S)
+  const forceSave = useCallback(async () => {
+    // Don't attempt to save if no noteId
+    if (!noteId) {
+      return;
+    }
+    // Cancel any pending debounced saves
+    if (debouncedSaveRef.current) {
+      clearTimeout(debouncedSaveRef.current);
+      debouncedSaveRef.current = null;
+    }
+    // Perform the save immediately
+    await performSave(noteId, contentRef.current);
+  }, [noteId, performSave]);
+
+  // Cleanup on unmount or when noteId changes
   useEffect(() => {
     return () => {
-      isMountedRef.current = false;
-      debouncedSave.cancel();
+      if (debouncedSaveRef.current) {
+        clearTimeout(debouncedSaveRef.current);
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [debouncedSave]);
+  }, []);
 
-  return { saveStatus, save, forceSave, error };
+  return {
+    saveStatus,
+    save,
+    forceSave,
+    error,
+  };
 }

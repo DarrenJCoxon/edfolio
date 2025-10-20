@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
-import { Prisma } from '@prisma/client';
+import { auth } from '@/lib/auth';
+import { z, ZodError } from 'zod';
+import type { Prisma } from '@prisma/client';
 
+// Validation schema for PATCH requests
 const updateNoteSchema = z.object({
-  title: z.string().min(1, 'Note title is required').max(200).optional(),
+  title: z.string().min(1).max(255).optional(),
   content: z.unknown().optional(),
 });
 
+// GET /api/notes/[id] - Fetch a single note
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Authenticate user
+    const { id } = await params;
+
+    // Verify authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
-
-    // Fetch note with ownership verification
+    // Fetch note and verify ownership
     const note = await prisma.note.findFirst({
       where: {
         id,
@@ -30,24 +32,32 @@ export async function GET(
           ownerId: session.user.id,
         },
       },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        folioId: true,
-        folderId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        folio: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        folder: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
     if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Note not found or access denied' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ data: note });
   } catch (error) {
-    console.error('Error in GET /api/notes/[id]:', error);
+    console.error('Error fetching note:', error);
     return NextResponse.json(
       { error: 'Failed to fetch note' },
       { status: 500 }
@@ -55,21 +65,26 @@ export async function GET(
   }
 }
 
+// PATCH /api/notes/[id] - Update note content and/or title
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Authenticate user
+    const { id } = await params;
+
+    // Verify authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
+    // Parse and validate request body
+    const body = await request.json();
+    const { title, content } = updateNoteSchema.parse(body);
 
-    // Verify note ownership through folio
-    const note = await prisma.note.findFirst({
+    // Verify note exists and user has access
+    const existingNote = await prisma.note.findFirst({
       where: {
         id,
         folio: {
@@ -78,21 +93,18 @@ export async function PATCH(
       },
     });
 
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    if (!existingNote) {
+      return NextResponse.json(
+        { error: 'Note not found or access denied' },
+        { status: 404 }
+      );
     }
-
-    // Parse and validate request body
-    const body = await request.json();
-    const { title, content } = updateNoteSchema.parse(body);
 
     // Build update data
     const updateData: Prisma.NoteUpdateInput = {};
-
     if (title !== undefined) {
       updateData.title = title;
     }
-
     if (content !== undefined) {
       updateData.content = content as Prisma.InputJsonValue;
     }
@@ -101,27 +113,18 @@ export async function PATCH(
     const updatedNote = await prisma.note.update({
       where: { id },
       data: updateData,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        folioId: true,
-        folderId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
 
     return NextResponse.json({ data: updatedNote });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
 
-    console.error('Error in PATCH /api/notes/[id]:', error);
+    console.error('Error updating note:', error);
     return NextResponse.json(
       { error: 'Failed to update note' },
       { status: 500 }
@@ -129,21 +132,22 @@ export async function PATCH(
   }
 }
 
+// DELETE /api/notes/[id] - Delete a note
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Authenticate user
+    const { id } = await params;
+
+    // Verify authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
-
-    // Verify note ownership through folio
-    const note = await prisma.note.findFirst({
+    // Verify note exists and user has access
+    const existingNote = await prisma.note.findFirst({
       where: {
         id,
         folio: {
@@ -152,8 +156,11 @@ export async function DELETE(
       },
     });
 
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    if (!existingNote) {
+      return NextResponse.json(
+        { error: 'Note not found or access denied' },
+        { status: 404 }
+      );
     }
 
     // Delete note
@@ -161,12 +168,9 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({
-      data: { success: true },
-      message: 'Note deleted successfully',
-    });
+    return NextResponse.json({ message: 'Note deleted successfully' });
   } catch (error) {
-    console.error('Error in DELETE /api/notes/[id]:', error);
+    console.error('Error deleting note:', error);
     return NextResponse.json(
       { error: 'Failed to delete note' },
       { status: 500 }

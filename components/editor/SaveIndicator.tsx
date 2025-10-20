@@ -1,8 +1,8 @@
 'use client';
 
-import { Check, Loader2, AlertCircle } from 'lucide-react';
-import { SaveStatus } from '@/lib/hooks/useAutoSave';
+import { Check, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { SaveStatus } from '@/lib/hooks/useAutoSave';
 
 export interface SaveIndicatorProps {
   status: SaveStatus;
@@ -19,30 +19,32 @@ export function SaveIndicator({ status, error, className }: SaveIndicatorProps) 
     <div
       className={cn(
         'flex items-center gap-[var(--spacing-xs)]',
-        'text-sm text-[var(--muted)]',
-        'transition-opacity duration-200',
+        'text-sm transition-opacity duration-200',
         className
       )}
       aria-live="polite"
+      aria-atomic="true"
     >
       {status === 'saving' && (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Saving...</span>
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--muted)]" />
+          <span className="text-[var(--muted)]">Saving...</span>
         </>
       )}
 
       {status === 'saved' && (
         <>
           <Check className="h-4 w-4 text-[var(--accent)]" />
-          <span>Saved</span>
+          <span className="text-[var(--accent)]">Saved</span>
         </>
       )}
 
       {status === 'error' && (
         <>
           <AlertCircle className="h-4 w-4 text-[var(--destructive)]" />
-          <span>Error saving{error ? `: ${error.message}` : ''}</span>
+          <span className="text-[var(--destructive)]">
+            {error?.message || 'Error saving'}
+          </span>
         </>
       )}
     </div>

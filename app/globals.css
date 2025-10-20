@@ -91,6 +91,10 @@
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
 
+  /* Callout Block */
+  --callout-bg: #EBF5FF;
+  --callout-border: #3B82F6;
+
   /* Sidebar (for shadcn compatibility) */
   --sidebar: #FFFFFF;
   --sidebar-foreground: #1A1A1A;
@@ -143,6 +147,10 @@
     --sidebar-accent-foreground: #F3F4F6;
     --sidebar-border: #374151;
     --sidebar-ring: #3B82F6;
+
+    /* Callout Block - Dark Mode */
+    --callout-bg: #374151;
+    --callout-border: #6B7280;
   }
 }
 
@@ -165,29 +173,201 @@ html, body {
 }
 
 /* TipTap Editor Styles */
-.tiptap-editor {
-  /* Placeholder styling */
-  .tiptap p.is-editor-empty:first-child::before {
-    color: var(--muted);
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
-  }
+.tiptap-editor .ProseMirror {
+  outline: none;
+}
 
-  /* Focus styles */
-  .ProseMirror:focus {
-    outline: none;
-  }
+.tiptap-editor .ProseMirror > * + * {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
 
-  /* Ensure proper paragraph spacing */
-  .ProseMirror p {
-    margin-top: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
-  }
+/* Placeholder */
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
 
-  /* First paragraph no top margin */
-  .ProseMirror p:first-child {
-    margin-top: 0;
-  }
+/* Typography - Headings */
+.tiptap-editor .ProseMirror h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 2.5rem;
+  color: var(--foreground);
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.tiptap-editor .ProseMirror h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 2.25rem;
+  color: var(--foreground);
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.tiptap-editor .ProseMirror h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 2rem;
+  color: var(--foreground);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.tiptap-editor .ProseMirror h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+  color: var(--foreground);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.tiptap-editor .ProseMirror h5 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: var(--foreground);
+}
+
+.tiptap-editor .ProseMirror h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: var(--foreground);
+}
+
+/* Typography - Paragraphs */
+.tiptap-editor .ProseMirror p {
+  color: var(--foreground);
+  line-height: 1.75;
+}
+
+/* Typography - Lists */
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  padding-left: var(--spacing-lg);
+  color: var(--foreground);
+}
+
+.tiptap-editor .ProseMirror ul {
+  list-style-type: disc;
+}
+
+.tiptap-editor .ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.tiptap-editor .ProseMirror li {
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.tiptap-editor .ProseMirror ul ul,
+.tiptap-editor .ProseMirror ol ul {
+  list-style-type: circle;
+}
+
+.tiptap-editor .ProseMirror ul ul ul,
+.tiptap-editor .ProseMirror ol ul ul {
+  list-style-type: square;
+}
+
+/* Typography - Blockquotes */
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 4px solid var(--border);
+  padding-left: var(--spacing-md);
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* Typography - Code */
+.tiptap-editor .ProseMirror code {
+  background-color: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 0.125rem var(--spacing-xs);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.tiptap-editor .ProseMirror pre {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.tiptap-editor .ProseMirror pre code {
+  background-color: transparent;
+  padding: 0;
+  color: var(--foreground);
+}
+
+/* Typography - Links */
+.tiptap-editor .ProseMirror a {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tiptap-editor .ProseMirror a:hover {
+  text-decoration: none;
+}
+
+/* Typography - Emphasis */
+.tiptap-editor .ProseMirror strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.tiptap-editor .ProseMirror em {
+  font-style: italic;
+  color: var(--foreground);
+}
+
+/* Typography - Horizontal Rule */
+.tiptap-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--spacing-lg) 0;
+}
+
+/* Focus styles */
+.tiptap-editor .ProseMirror:focus {
+  outline: none;
+}
+
+/* Selection */
+.tiptap-editor .ProseMirror ::selection {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* Callout Block */
+.tiptap-editor .ProseMirror .callout-block {
+  background-color: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+}
+
+.tiptap-editor .ProseMirror .callout-block > p:first-child {
+  margin-top: 0;
+}
+
+.tiptap-editor .ProseMirror .callout-block > p:last-child {
+  margin-bottom: 0;
 }
