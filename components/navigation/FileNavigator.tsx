@@ -202,6 +202,8 @@ export function FileNavigator({ className }: FileNavigatorProps) {
                 onSelectNote={setActiveNote}
                 onRename={(type, id, name) => openRenameDialog(type, id, name)}
                 onDelete={(type, id, name) => openDeleteDialog(type, id, name)}
+                onCreateNote={(parentId) => openCreateDialog('note', parentId)}
+                onCreateFolder={(parentId) => openCreateDialog('folder', parentId)}
               />
             )}
           </div>

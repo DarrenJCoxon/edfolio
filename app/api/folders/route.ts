@@ -9,6 +9,63 @@ const createFolderSchema = z.object({
   parentId: z.string().cuid('Invalid parent folder ID').nullable().optional(),
 });
 
+// GET /api/folders - List all folders for a folio
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate user
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const folioId = searchParams.get('folioId');
+
+    if (!folioId) {
+      return NextResponse.json({ error: 'folioId is required' }, { status: 400 });
+    }
+
+    // Verify folio ownership
+    const folio = await prisma.folio.findFirst({
+      where: {
+        id: folioId,
+        ownerId: session.user.id,
+      },
+    });
+
+    if (!folio) {
+      return NextResponse.json({ error: 'Folio not found' }, { status: 404 });
+    }
+
+    // Fetch all folders for the folio
+    const folders = await prisma.folder.findMany({
+      where: {
+        folioId,
+      },
+      select: {
+        id: true,
+        name: true,
+        folioId: true,
+        parentId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return NextResponse.json({ data: folders });
+  } catch (error) {
+    console.error('Error in GET /api/folders:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch folders' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user

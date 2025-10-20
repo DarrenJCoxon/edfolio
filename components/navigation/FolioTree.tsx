@@ -4,6 +4,7 @@ import { Folder, Note } from '@/types';
 import { FolderItem } from './FolderItem';
 import { NoteItem } from './NoteItem';
 import { ItemContextMenu } from './ItemContextMenu';
+import { FolderContextMenu } from './FolderContextMenu';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,6 +18,8 @@ interface FolioTreeProps {
   onSelectNote: (id: string) => void;
   onRename: (type: 'folder' | 'note', id: string, name: string) => void;
   onDelete: (type: 'folder' | 'note', id: string, name: string) => void;
+  onCreateNote: (parentId?: string) => void;
+  onCreateFolder: (parentId?: string) => void;
 }
 
 export function FolioTree({
@@ -29,6 +32,8 @@ export function FolioTree({
   onSelectNote,
   onRename,
   onDelete,
+  onCreateNote,
+  onCreateFolder,
 }: FolioTreeProps) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemType, setEditingItemType] = useState<'folder' | 'note' | null>(null);
@@ -94,7 +99,9 @@ export function FolioTree({
 
     return (
       <div key={folder.id}>
-        <ItemContextMenu
+        <FolderContextMenu
+          onNewNote={() => onCreateNote(folder.id)}
+          onNewFolder={() => onCreateFolder(folder.id)}
           onRename={() => {
             setEditingItemId(folder.id);
             setEditingItemType('folder');
@@ -113,7 +120,7 @@ export function FolioTree({
               setEditingItemType('folder');
             }}
           />
-        </ItemContextMenu>
+        </FolderContextMenu>
 
         {isExpanded && (
           <div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFoliosStore } from '@/lib/stores/folios-store';
 
 export function useFolioData() {
-  const { activeFolioId, setFolios, setNotes, setActiveFolio } =
+  const { activeFolioId, setFolios, setFolders, setNotes, setActiveFolio } =
     useFoliosStore();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,8 +41,20 @@ export function useFolioData() {
 
     const fetchFolioData = async () => {
       try {
-        const notesRes = await fetch(`/api/notes?folioId=${activeFolioId}`);
+        // Fetch folders
+        const foldersRes = await fetch(`/api/folders?folioId=${activeFolioId}`);
+        if (foldersRes.ok) {
+          const { data: foldersData } = await foldersRes.json();
+          const foldersWithDates = foldersData.map((f: unknown) => ({
+            ...(f as Record<string, unknown>),
+            createdAt: new Date((f as { createdAt: string }).createdAt),
+            updatedAt: new Date((f as { updatedAt: string }).updatedAt),
+          }));
+          setFolders(foldersWithDates);
+        }
 
+        // Fetch notes
+        const notesRes = await fetch(`/api/notes?folioId=${activeFolioId}`);
         if (notesRes.ok) {
           const { data: notesData } = await notesRes.json();
           const notesWithDates = notesData.map((n: unknown) => ({

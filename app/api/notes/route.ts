@@ -7,7 +7,7 @@ import { z, ZodError } from 'zod';
 const createNoteSchema = z.object({
   title: z.string().min(1).max(255).default('Untitled'),
   folioId: z.string().cuid(),
-  folderId: z.string().cuid().optional(),
+  folderId: z.string().cuid().nullable().optional(),
 });
 
 // GET /api/notes - List all notes for the authenticated user
@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/notes - Create a new note
 export async function POST(request: NextRequest) {
+  let body: any;
   try {
     // Verify authentication
     const session = await auth();
@@ -75,7 +76,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json();
+    body = await request.json();
+    console.log('Creating note with body:', body);
     const { title, folioId, folderId } = createNoteSchema.parse(body);
 
     // Verify folio ownership
@@ -123,6 +125,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: note }, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error('Validation error:', error.issues);
+      console.error('Received body:', body);
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
