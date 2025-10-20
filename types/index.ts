@@ -80,3 +80,17 @@ export interface AppState {
   activeFolioId: string | null;
   sidebarCollapsed: boolean;
 }
+
+// Slash command types
+
+export interface CommandItem {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  keywords: string[];
+  command: (props: { editor: any; range: any }) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export interface CommandMenuProps {
+  items: CommandItem[];
+  command: (item: CommandItem) => void;
+}

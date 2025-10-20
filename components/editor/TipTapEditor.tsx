@@ -4,8 +4,12 @@ import { useEditor, EditorContent, Content } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
+import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { Callout } from '@/lib/editor/callout';
+import { SlashCommand } from '@/lib/editor/slash-command';
 
 export interface TipTapEditorProps {
   content: unknown;
@@ -33,6 +37,10 @@ export function TipTapEditor({
         placeholder,
       }),
       Typography,
+      Bold,
+      Italic,
+      Callout,
+      SlashCommand,
     ],
     content: content as Content,
     editable,
