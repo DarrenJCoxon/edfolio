@@ -4,6 +4,8 @@ import { Folder, Note } from '@/types';
 import { FolderItem } from './FolderItem';
 import { NoteItem } from './NoteItem';
 import { ItemContextMenu } from './ItemContextMenu';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface FolioTreeProps {
   folders: Folder[];
@@ -28,6 +30,63 @@ export function FolioTree({
   onRename,
   onDelete,
 }: FolioTreeProps) {
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemType, setEditingItemType] = useState<'folder' | 'note' | null>(null);
+
+  const handleRenameFolder = async (folderId: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/folders/${folderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to rename folder');
+      }
+
+      // Update via parent handler
+      onRename('folder', folderId, newName);
+      setEditingItemId(null);
+      setEditingItemType(null);
+      toast.success('Folder renamed successfully');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to rename folder';
+      toast.error(errorMessage);
+      throw err; // Re-throw to let component handle it
+    }
+  };
+
+  const handleRenameNote = async (noteId: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to rename note');
+      }
+
+      // Update via parent handler
+      onRename('note', noteId, newName);
+      setEditingItemId(null);
+      setEditingItemType(null);
+      toast.success('Note renamed successfully');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to rename note';
+      toast.error(errorMessage);
+      throw err; // Re-throw to let component handle it
+    }
+  };
+
   const renderFolder = (folder: Folder, depth: number = 0): React.ReactElement => {
     const isExpanded = expandedFolderIds.has(folder.id);
     const childFolders = folders.filter((f) => f.parentId === folder.id);
@@ -36,7 +95,10 @@ export function FolioTree({
     return (
       <div key={folder.id}>
         <ItemContextMenu
-          onRename={() => onRename('folder', folder.id, folder.name)}
+          onRename={() => {
+            setEditingItemId(folder.id);
+            setEditingItemType('folder');
+          }}
           onDelete={() => onDelete('folder', folder.id, folder.name)}
         >
           <FolderItem
@@ -44,6 +106,12 @@ export function FolioTree({
             depth={depth}
             isExpanded={isExpanded}
             onToggleExpand={onToggleFolderExpand}
+            onRename={handleRenameFolder}
+            isEditingExternally={editingItemId === folder.id && editingItemType === 'folder'}
+            onStartEdit={() => {
+              setEditingItemId(folder.id);
+              setEditingItemType('folder');
+            }}
           />
         </ItemContextMenu>
 
@@ -53,7 +121,10 @@ export function FolioTree({
             {childNotes.map((note) => (
               <ItemContextMenu
                 key={note.id}
-                onRename={() => onRename('note', note.id, note.title)}
+                onRename={() => {
+                  setEditingItemId(note.id);
+                  setEditingItemType('note');
+                }}
                 onDelete={() => onDelete('note', note.id, note.title)}
               >
                 <NoteItem
@@ -61,6 +132,12 @@ export function FolioTree({
                   depth={depth + 1}
                   isActive={note.id === activeNoteId}
                   onClick={onSelectNote}
+                  onRename={handleRenameNote}
+                  isEditingExternally={editingItemId === note.id && editingItemType === 'note'}
+                  onStartEdit={() => {
+                    setEditingItemId(note.id);
+                    setEditingItemType('note');
+                  }}
                 />
               </ItemContextMenu>
             ))}
@@ -83,7 +160,10 @@ export function FolioTree({
       {rootNotes.map((note) => (
         <ItemContextMenu
           key={note.id}
-          onRename={() => onRename('note', note.id, note.title)}
+          onRename={() => {
+            setEditingItemId(note.id);
+            setEditingItemType('note');
+          }}
           onDelete={() => onDelete('note', note.id, note.title)}
         >
           <NoteItem
@@ -91,6 +171,12 @@ export function FolioTree({
             depth={0}
             isActive={note.id === activeNoteId}
             onClick={onSelectNote}
+            onRename={handleRenameNote}
+            isEditingExternally={editingItemId === note.id && editingItemType === 'note'}
+            onStartEdit={() => {
+              setEditingItemId(note.id);
+              setEditingItemType('note');
+            }}
           />
         </ItemContextMenu>
       ))}

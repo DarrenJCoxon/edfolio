@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { z, ZodError } from 'zod';
 import type { Prisma } from '@prisma/client';
+import { validateFileName } from '@/lib/validation/name-validation';
 
 // Validation schema for PATCH requests
 const updateNoteSchema = z.object({
@@ -100,10 +101,32 @@ export async function PATCH(
       );
     }
 
+    // Validate title if being updated
+    if (title !== undefined && title !== existingNote.title) {
+      const trimmedTitle = title.trim();
+
+      // Fetch sibling notes (in same folder or folio root)
+      const siblingNotes = await prisma.note.findMany({
+        where: {
+          folioId: existingNote.folioId,
+          folderId: existingNote.folderId,
+          id: { not: existingNote.id }, // Exclude current note
+        },
+        select: { title: true },
+      });
+
+      const existingNames = siblingNotes.map((n) => n.title);
+      const validation = validateFileName(trimmedTitle, existingNames);
+
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+    }
+
     // Build update data
     const updateData: Prisma.NoteUpdateInput = {};
     if (title !== undefined) {
-      updateData.title = title;
+      updateData.title = title.trim();
     }
     if (content !== undefined) {
       updateData.content = content as Prisma.InputJsonValue;

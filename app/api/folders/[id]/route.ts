@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { validateFolderName } from '@/lib/validation/name-validation';
 
 const updateFolderSchema = z.object({
-  name: z.string().min(1, 'Folder name is required').max(100),
+  name: z.string().min(1, 'Folder name is required').max(255),
 });
 
 export async function PATCH(
@@ -38,29 +39,32 @@ export async function PATCH(
     const body = await request.json();
     const { name } = updateFolderSchema.parse(body);
 
-    // Check for duplicate name in same parent (excluding current folder)
-    const existingFolder = await prisma.folder.findFirst({
-      where: {
-        folioId: folder.folioId,
-        parentId: folder.parentId,
-        name,
-        NOT: {
-          id,
-        },
-      },
-    });
+    // Validate name if it changed
+    if (name !== folder.name) {
+      const trimmedName = name.trim();
 
-    if (existingFolder) {
-      return NextResponse.json(
-        { error: 'A folder with this name already exists in this location' },
-        { status: 400 }
-      );
+      // Fetch sibling folders (same parent level)
+      const siblingFolders = await prisma.folder.findMany({
+        where: {
+          folioId: folder.folioId,
+          parentId: folder.parentId,
+          id: { not: id }, // Exclude current folder
+        },
+        select: { name: true },
+      });
+
+      const existingNames = siblingFolders.map((f) => f.name);
+      const validation = validateFolderName(trimmedName, existingNames);
+
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
     }
 
     // Update folder
     const updatedFolder = await prisma.folder.update({
       where: { id },
-      data: { name },
+      data: { name: name.trim() },
       select: {
         id: true,
         name: true,
