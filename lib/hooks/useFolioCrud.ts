@@ -54,7 +54,7 @@ export function useFolioCrud() {
           body: JSON.stringify({
             title,
             folioId,
-            folderId: folderId || null,
+            ...(folderId && { folderId }),
           }),
         });
 

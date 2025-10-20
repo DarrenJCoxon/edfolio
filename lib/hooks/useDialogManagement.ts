@@ -24,6 +24,7 @@ export function useDialogManagement() {
   const [createDialog, setCreateDialog] = useState<CreateDialogState>({
     isOpen: false,
     type: 'folder',
+    parentId: undefined,
   });
 
   const [renameDialog, setRenameDialog] = useState<RenameDialogState | null>(
@@ -42,7 +43,7 @@ export function useDialogManagement() {
   );
 
   const closeCreateDialog = useCallback(() => {
-    setCreateDialog({ isOpen: false, type: 'folder' });
+    setCreateDialog({ isOpen: false, type: 'folder', parentId: undefined });
   }, []);
 
   const openRenameDialog = useCallback(

@@ -7,6 +7,7 @@ interface FoliosState {
   notes: Note[];
   activeFolioId: string | null;
   activeNoteId: string | null;
+  selectedFolderId: string | null;
   expandedFolderIds: Set<string>;
   sidebarCollapsed: boolean;
   focusedItemId: string | null;
@@ -32,6 +33,7 @@ interface FoliosState {
   updateNote: (id: string, updates: Partial<Note>) => void;
   deleteNote: (id: string) => void;
   setActiveNote: (id: string | null) => void;
+  setSelectedFolder: (id: string | null) => void;
 
   // Sidebar actions
   toggleSidebar: () => void;
@@ -53,6 +55,7 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   notes: [],
   activeFolioId: null,
   activeNoteId: null,
+  selectedFolderId: null,
   expandedFolderIds: new Set<string>(),
   sidebarCollapsed: false,
   focusedItemId: null,
@@ -164,6 +167,8 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
     }),
 
   setActiveNote: (id) => set({ activeNoteId: id }),
+
+  setSelectedFolder: (id) => set({ selectedFolderId: id }),
 
   // Sidebar actions
   toggleSidebar: () =>

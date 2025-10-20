@@ -15,6 +15,8 @@ export interface FolderItemProps {
   onClick?: (id: string) => void;
   isEditingExternally?: boolean;
   onStartEdit?: () => void;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
 export function FolderItem({
@@ -26,6 +28,8 @@ export function FolderItem({
   onRename,
   isEditingExternally = false,
   onStartEdit,
+  isSelected = false,
+  onSelect,
 }: FolderItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(folder.name);
@@ -123,6 +127,9 @@ export function FolderItem({
       if (onClick) {
         onClick(folder.id);
       }
+      if (onSelect) {
+        onSelect(folder.id);
+      }
       onToggleExpand(folder.id);
     }
   };
@@ -193,13 +200,14 @@ export function FolderItem({
     <div
       role="treeitem"
       aria-expanded={isExpanded}
-      aria-selected={false}
+      aria-selected={isSelected}
       aria-label={folder.name}
       className={cn(
         'flex items-center gap-[var(--spacing-xs)] py-[var(--spacing-xs)]',
         'cursor-pointer rounded-[var(--radius-sm)]',
         'hover:bg-[var(--muted)]/10',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
+        isSelected && 'bg-[var(--muted)]/20'
       )}
       style={indentStyle}
       onClick={handleClick}

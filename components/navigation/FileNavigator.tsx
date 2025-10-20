@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { FileNavigatorProps, Folder, Note } from '@/types';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FolderPlus } from 'lucide-react';
 import { FolioSwitcher } from './FolioSwitcher';
 import { CreateItemDialog } from './CreateItemDialog';
 import { RenameDialog } from './RenameDialog';
@@ -26,9 +26,11 @@ export function FileNavigator({ className }: FileNavigatorProps) {
     activeNoteId,
     expandedFolderIds,
     sidebarCollapsed,
+    selectedFolderId,
     setActiveNote,
     toggleFolderExpanded,
     toggleSidebar,
+    setSelectedFolder,
   } = useFoliosStore();
 
   const { isLoading } = useFolioData();
@@ -152,9 +154,20 @@ export function FileNavigator({ className }: FileNavigatorProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => openCreateDialog('note')}
+              onClick={() => openCreateDialog('folder', selectedFolderId || undefined)}
+              aria-label="New folder"
+              className="h-8 w-8"
+              title="New folder"
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openCreateDialog('note', selectedFolderId || undefined)}
               aria-label="New note"
               className="h-8 w-8"
+              title="New note"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -191,6 +204,10 @@ export function FileNavigator({ className }: FileNavigatorProps) {
                 onSelectNote={setActiveNote}
                 onRename={(type, id, name) => openRenameDialog(type, id, name)}
                 onDelete={(type, id, name) => openDeleteDialog(type, id, name)}
+                onCreateNote={(parentId) => openCreateDialog('note', parentId)}
+                onCreateFolder={(parentId) => openCreateDialog('folder', parentId)}
+                selectedFolderId={selectedFolderId}
+                onSelectFolder={setSelectedFolder}
               />
             )}
           </div>
