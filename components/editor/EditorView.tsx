@@ -1,24 +1,26 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { TipTapEditor } from '@/components/editor/TipTapEditor';
-import { SaveIndicator } from '@/components/editor/SaveIndicator';
-import { useAutoSave } from '@/lib/hooks/useAutoSave';
-import { useFoliosStore } from '@/lib/stores/folios-store';
+import { useState, useEffect, useCallback } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TipTapEditor } from './TipTapEditor';
+import { SaveIndicator } from './SaveIndicator';
+import { useAutoSave } from '@/lib/hooks/useAutoSave';
+import { EditorViewProps } from '@/types';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export function EditorView({ className }: { className?: string }) {
-  const { activeNoteId, updateNote } = useFoliosStore();
+export function EditorView({ className, note }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const activeNoteId = note?.id;
 
   // Fetch note content when activeNoteId changes
   useEffect(() => {
     if (!activeNoteId) {
       setNoteContent(null);
+      setError(null);
       return;
     }
 
@@ -30,15 +32,16 @@ export function EditorView({ className }: { className?: string }) {
         const response = await fetch(`/api/notes/${activeNoteId}`);
 
         if (!response.ok) {
-          throw new Error('Failed to load note');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load note');
         }
 
         const { data } = await response.json();
-        setNoteContent(data.content || { type: 'doc', content: [] });
+        setNoteContent(data.content);
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load note';
+        setError(errorMessage);
         console.error('Error fetching note:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load note');
-        setNoteContent({ type: 'doc', content: [] });
       } finally {
         setIsLoading(false);
       }
@@ -47,16 +50,16 @@ export function EditorView({ className }: { className?: string }) {
     fetchNote();
   }, [activeNoteId]);
 
-  // Auto-save hook
+  // Initialize auto-save hook only when there's an active note and content is loaded
   const { saveStatus, save, forceSave, error: saveError } = useAutoSave({
-    noteId: activeNoteId,
-    initialContent: noteContent,
+    noteId: activeNoteId || '',
+    initialContent: noteContent || {},
     delay: 500,
     onSaveSuccess: () => {
-      // Update note's updatedAt in store
-      if (activeNoteId) {
-        updateNote(activeNoteId, { updatedAt: new Date() });
-      }
+      // Note saved successfully
+    },
+    onSaveError: (err) => {
+      // Handle save error silently
     },
   });
 
@@ -64,12 +67,13 @@ export function EditorView({ className }: { className?: string }) {
   const handleContentChange = useCallback(
     (content: unknown) => {
       setNoteContent(content);
+      // Always call save - it will handle the check internally
       save(content);
     },
     [save]
   );
 
-  // Keyboard shortcut for force save
+  // Handle keyboard shortcut for manual save (Cmd+S / Ctrl+S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -78,11 +82,18 @@ export function EditorView({ className }: { className?: string }) {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [forceSave]);
 
-  // Empty state when no note selected
+  // Handle reload button click
+  const handleReload = () => {
+    if (activeNoteId) {
+      window.location.reload();
+    }
+  };
+
+  // Empty state - no note selected
   if (!activeNoteId) {
     return (
       <div
@@ -93,7 +104,7 @@ export function EditorView({ className }: { className?: string }) {
           className
         )}
       >
-        <div className="text-center space-y-[var(--spacing-sm)]">
+        <div className="text-center">
           <p className="text-lg text-[var(--muted)]">
             Select a note to begin writing
           </p>
@@ -113,7 +124,10 @@ export function EditorView({ className }: { className?: string }) {
           className
         )}
       >
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--muted)]" />
+        <div className="flex flex-col items-center gap-[var(--spacing-md)]">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--muted)]" />
+          <p className="text-sm text-[var(--muted)]">Loading note...</p>
+        </div>
       </div>
     );
   }
@@ -129,22 +143,25 @@ export function EditorView({ className }: { className?: string }) {
           className
         )}
       >
-        <div className="text-center space-y-[var(--spacing-sm)]">
-          <p className="text-lg text-[var(--destructive)]">
-            Error: {error}
+        <div className="flex flex-col items-center gap-[var(--spacing-md)] max-w-md text-center">
+          <AlertCircle className="h-12 w-12 text-[var(--destructive)]" />
+          <p className="text-lg font-semibold text-[var(--foreground)]">
+            Failed to load note
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="text-[var(--accent)] hover:underline"
+          <p className="text-sm text-[var(--muted)]">{error}</p>
+          <Button
+            onClick={handleReload}
+            variant="outline"
+            className="mt-[var(--spacing-sm)]"
           >
-            Reload page
-          </button>
+            Reload
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Editor view
+  // Main editor view
   return (
     <div
       className={cn(
@@ -153,18 +170,22 @@ export function EditorView({ className }: { className?: string }) {
         className
       )}
     >
-      {/* Save indicator */}
-      <div className="flex justify-end p-[var(--spacing-md)] border-b border-[var(--border)]">
+      {/* Header with save indicator */}
+      <div className="flex items-center justify-between p-[var(--spacing-md)] border-b border-[var(--border)]">
+        <h2 className="text-sm font-semibold text-[var(--foreground)]">
+          {note?.title || 'Untitled'}
+        </h2>
         <SaveIndicator status={saveStatus} error={saveError} />
       </div>
 
-      {/* Editor */}
+      {/* Editor content */}
       <ScrollArea className="flex-1">
         <div className="max-w-4xl mx-auto p-[var(--spacing-xl)]">
           <TipTapEditor
             content={noteContent}
             onChange={handleContentChange}
-            placeholder="Start writing..."
+            editable={true}
+            placeholder="Start typing..."
           />
         </div>
       </ScrollArea>

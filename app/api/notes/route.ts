@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
+import { auth } from '@/lib/auth';
+import { z, ZodError } from 'zod';
 
+// Validation schema for POST requests
 const createNoteSchema = z.object({
-  title: z.string().min(1, 'Note title is required').max(200).optional(),
-  folioId: z.string().cuid('Invalid folio ID'),
-  folderId: z.string().cuid('Invalid folder ID').nullable().optional(),
+  title: z.string().min(1).max(255).default('Untitled'),
+  folioId: z.string().cuid(),
+  folderId: z.string().cuid().optional(),
 });
 
+// GET /api/notes - List all notes for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate user
+    // Verify authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,59 +24,40 @@ export async function GET(request: NextRequest) {
     const folioId = searchParams.get('folioId');
     const folderId = searchParams.get('folderId');
 
-    if (!folioId) {
-      return NextResponse.json(
-        { error: 'folioId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify folio ownership
-    const folio = await prisma.folio.findFirst({
-      where: {
-        id: folioId,
+    // Build where clause
+    const where = {
+      folio: {
         ownerId: session.user.id,
       },
-    });
-
-    if (!folio) {
-      return NextResponse.json({ error: 'Folio not found' }, { status: 404 });
-    }
-
-    // Build where clause
-    const whereClause: {
-      folioId: string;
-      folderId?: string | null;
-    } = {
-      folioId,
+      ...(folioId && { folioId }),
+      ...(folderId && { folderId }),
     };
 
-    // If folderId is provided, filter by it; if "null" string, filter root notes
-    if (folderId === 'null') {
-      whereClause.folderId = null;
-    } else if (folderId) {
-      whereClause.folderId = folderId;
-    }
-
-    // Fetch notes (only needed fields for list view)
+    // Fetch notes
     const notes = await prisma.note.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        title: true,
-        folioId: true,
-        folderId: true,
-        updatedAt: true,
-        createdAt: true,
-      },
+      where,
       orderBy: {
         updatedAt: 'desc',
+      },
+      include: {
+        folio: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        folder: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
     return NextResponse.json({ data: notes });
   } catch (error) {
-    console.error('Error in GET /api/notes:', error);
+    console.error('Error fetching notes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch notes' },
       { status: 500 }
@@ -82,9 +65,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST /api/notes - Create a new note
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate user
+    // Verify authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -103,10 +87,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!folio) {
-      return NextResponse.json({ error: 'Folio not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Folio not found or access denied' },
+        { status: 404 }
+      );
     }
 
-    // If folderId provided, verify it belongs to the same folio
+    // If folderId provided, verify folder ownership
     if (folderId) {
       const folder = await prisma.folder.findFirst({
         where: {
@@ -117,40 +104,32 @@ export async function POST(request: NextRequest) {
 
       if (!folder) {
         return NextResponse.json(
-          { error: 'Folder not found' },
+          { error: 'Folder not found or access denied' },
           { status: 404 }
         );
       }
     }
 
-    // Create note
+    // Create note with default empty TipTap content
     const note = await prisma.note.create({
       data: {
-        title: title || 'Untitled',
+        title,
         folioId,
         folderId: folderId || null,
-        content: {},
-      },
-      select: {
-        id: true,
-        title: true,
-        folioId: true,
-        folderId: true,
-        createdAt: true,
-        updatedAt: true,
+        content: { type: 'doc', content: [] },
       },
     });
 
     return NextResponse.json({ data: note }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
 
-    console.error('Error in POST /api/notes:', error);
+    console.error('Error creating note:', error);
     return NextResponse.json(
       { error: 'Failed to create note' },
       { status: 500 }

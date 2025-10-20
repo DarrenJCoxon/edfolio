@@ -1,6 +1,6 @@
 // App-wide constants
 
-export const APP_NAME = 'Kanvas';
+export const APP_NAME = 'Edfolio';
 export const APP_DESCRIPTION = 'Your sanctuary for thought';
 
 // Layout dimensions (also defined in CSS variables)

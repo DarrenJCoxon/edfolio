@@ -1,4 +1,4 @@
--- CreateTable
+-- CreateTable: Create Folder table with hierarchy support
 CREATE TABLE "Folder" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE "Folder" (
     CONSTRAINT "Folder_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- CreateTable: Create Note table
 CREATE TABLE "Note" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL DEFAULT 'Untitled',
@@ -45,7 +45,7 @@ ALTER TABLE "Folder" ADD CONSTRAINT "Folder_folioId_fkey" FOREIGN KEY ("folioId"
 ALTER TABLE "Folder" ADD CONSTRAINT "Folder_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Folder"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Note" ADD CONSTRAINT "Note_folioId_fkey" FOREIGN KEY ("folioId") REFERENCES "Folio"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Note" ADD CONSTRAINT "Note_folderId_fkey" FOREIGN KEY ("folderId") REFERENCES "Folder"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Note" ADD CONSTRAINT "Note_folderId_fkey" FOREIGN KEY ("folderId") REFERENCES "Folder"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Note" ADD CONSTRAINT "Note_folioId_fkey" FOREIGN KEY ("folioId") REFERENCES "Folio"("id") ON DELETE CASCADE ON UPDATE CASCADE;

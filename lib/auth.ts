@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from 'next-auth';
+import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
@@ -55,7 +56,7 @@ export const authOptions: NextAuthConfig = {
     }),
   ],
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -64,15 +65,24 @@ export const authOptions: NextAuthConfig = {
     error: '/login',
   },
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
       }
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+// Export auth helpers
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
 
 // Helper functions
 export async function hashPassword(password: string): Promise<string> {

@@ -1,0 +1,64 @@
+import { useEffect, useState } from 'react';
+import { useFoliosStore } from '@/lib/stores/folios-store';
+
+export function useFolioData() {
+  const { activeFolioId, setFolios, setNotes, setActiveFolio } =
+    useFoliosStore();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch folios on mount
+  useEffect(() => {
+    const fetchFolios = async () => {
+      try {
+        const response = await fetch('/api/folios');
+        if (!response.ok) throw new Error('Failed to fetch folios');
+
+        const { data } = await response.json();
+        const foliosWithDates = data.map((f: unknown) => ({
+          ...(f as Record<string, unknown>),
+          createdAt: new Date((f as { createdAt: string }).createdAt),
+          updatedAt: new Date((f as { updatedAt: string }).updatedAt),
+        }));
+
+        setFolios(foliosWithDates);
+
+        if (foliosWithDates.length > 0 && !activeFolioId) {
+          setActiveFolio(foliosWithDates[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch folios:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFolios();
+  }, []);
+
+  // Fetch folders and notes when active folio changes
+  useEffect(() => {
+    if (!activeFolioId) return;
+
+    const fetchFolioData = async () => {
+      try {
+        const notesRes = await fetch(`/api/notes?folioId=${activeFolioId}`);
+
+        if (notesRes.ok) {
+          const { data: notesData } = await notesRes.json();
+          const notesWithDates = notesData.map((n: unknown) => ({
+            ...(n as Record<string, unknown>),
+            createdAt: new Date((n as { createdAt: string }).createdAt),
+            updatedAt: new Date((n as { updatedAt: string }).updatedAt),
+          }));
+          setNotes(notesWithDates);
+        }
+      } catch (error) {
+        console.error('Failed to fetch folio data:', error);
+      }
+    };
+
+    fetchFolioData();
+  }, [activeFolioId]);
+
+  return { isLoading };
+}
