@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { scalewayClient, DEFAULT_MODEL } from '@/lib/ai/scaleway-client';
 import { checkRateLimit } from '@/lib/ai/rate-limiter';
 import { prisma } from '@/lib/prisma';
-import type { SpellingPreference } from '@/types';
+import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/ai/spelling-utils';
 
 /**
  * POST /api/ai/fix-grammar
@@ -87,12 +87,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Fetch user's spelling preference
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { spellingPreference: true }
-    });
-
-    const spellingPref = (user?.spellingPreference as SpellingPreference) || 'UK';
+    const spellingPref = await getUserSpellingPreference(session.user.id);
+    const spellingInstruction = getSpellingPromptInstruction(spellingPref);
 
     // 6. Call Scaleway AI for grammar correction
     const result = await scalewayClient.chat({
@@ -100,7 +96,9 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are an expert copy editor. Fix all spelling and grammar errors in the following text. Use ${spellingPref} English spelling. Preserve the original meaning and tone. Return only the corrected text without explanations or additional commentary.`
+          content: 'You are an expert copy editor. Fix all spelling and grammar errors in the following text. ' +
+            spellingInstruction +
+            ' Preserve the original meaning and tone. Return only the corrected text without explanations or additional commentary.'
         },
         {
           role: 'user',

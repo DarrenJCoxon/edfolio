@@ -168,6 +168,11 @@ export interface SummarizePreviewProps {
 
 // User Settings types
 
+/**
+ * User's preferred spelling variant for all AI features.
+ * - UK: British English (colour, realise, analyse)
+ * - US: American English (color, realize, analyze)
+ */
 export type SpellingPreference = 'UK' | 'US';
 
 // AI Fix Grammar types
