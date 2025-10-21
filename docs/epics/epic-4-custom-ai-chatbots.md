@@ -1,4 +1,4 @@
-# Epic 3: Custom AI Chatbots
+# Epic 4: Custom AI Chatbots
 
 **Status:** Post-MVP
 **Epic Goal:** To empower users to create personalized, knowledge-aware AI chatbots that can engage in contextual conversations grounded in user-uploaded documents.
@@ -175,7 +175,7 @@ components/
 
 ## Story Breakdown
 
-### Story 3.1: Chatbot UI Foundation
+### Story 4.1: Chatbot UI Foundation
 **Goal:** Create the visual interface for chatbot interaction
 
 **Scope:**
@@ -200,7 +200,7 @@ components/
 
 ---
 
-### Story 3.2: Chatbot Creation & Configuration
+### Story 4.2: Chatbot Creation & Configuration
 **Goal:** Enable users to create and configure chatbots
 
 **Scope:**
@@ -226,7 +226,7 @@ components/
 
 ---
 
-### Story 3.3: Private Knowledge Base Upload
+### Story 4.3: Private Knowledge Base Upload
 **Goal:** Allow users to upload documents to enhance chatbot knowledge
 
 **Scope:**
@@ -265,7 +265,7 @@ components/
 
 ---
 
-### Story 3.4: Chatbot Interaction with Knowledge
+### Story 4.4: Chatbot Interaction with Knowledge
 **Goal:** Enable conversational AI with document-grounded responses
 
 **Scope:**
@@ -421,7 +421,7 @@ psql $DATABASE_URL -c "CREATE INDEX ON \"DocumentChunk\" USING ivfflat (embeddin
 
 ---
 
-## Future Enhancements (Post-Epic 3)
+## Future Enhancements (Post-Epic 4)
 
 - **Multi-modal Support:** Image and audio document types
 - **Advanced RAG:** Re-ranking, query expansion, hybrid search
@@ -454,4 +454,4 @@ psql $DATABASE_URL -c "CREATE INDEX ON \"DocumentChunk\" USING ivfflat (embeddin
 
 ---
 
-**Next Step:** Proceed to Epic 4 or begin Story 3.1 implementation.
+**Next Step:** Proceed to Epic 5 or begin Story 4.1 implementation.
