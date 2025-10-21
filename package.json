@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && prisma migrate deploy && next build --turbopack",
+    "build": "prisma generate && next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "test": "jest --watch",
     "test:ci": "jest --ci",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --testPathPattern=__tests__/integration",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.0",
@@ -26,6 +27,7 @@
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@tiptap/core": "^3.7.2",
     "@tiptap/extension-code-block-lowlight": "^3.7.2",
     "@tiptap/extension-document": "^3.7.2",
     "@tiptap/extension-image": "^3.7.2",
