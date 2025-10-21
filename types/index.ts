@@ -98,3 +98,22 @@ export interface AppState {
   activeVaultId: string | null;
   sidebarCollapsed: boolean;
 }
+
+// Highlight Menu types
+
+export interface HighlightMenuProps {
+  isVisible: boolean;
+  position: { x: number; y: number };
+  onOptionClick: (option: 'rephrase' | 'summarize' | 'fix-grammar') => void;
+}
+
+export interface MenuPosition {
+  x: number;
+  y: number;
+}
+
+export interface TextSelection {
+  text: string;
+  from: number;
+  to: number;
+}

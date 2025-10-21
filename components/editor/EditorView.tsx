@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TipTapEditor } from './TipTapEditor';
 import { SaveIndicator } from './SaveIndicator';
 import { InlineFileNameEditor } from './InlineFileNameEditor';
+import { HighlightMenu } from './HighlightMenu';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
 import { EditorViewProps } from '@/types';
 import { cn } from '@/lib/utils';
@@ -12,12 +13,15 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFoliosStore } from '@/lib/stores/folios-store';
 import { toast } from 'sonner';
+import { calculateMenuPosition } from '@/lib/editor/menu-positioning';
 
 export function EditorView({ className, note }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditingFileName, setIsEditingFileName] = useState(false);
+  const [showHighlightMenu, setShowHighlightMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
 
@@ -63,7 +67,7 @@ export function EditorView({ className, note }: EditorViewProps) {
     onSaveSuccess: () => {
       // Note saved successfully
     },
-    onSaveError: (err) => {
+    onSaveError: () => {
       // Handle save error silently
     },
   });
@@ -78,6 +82,41 @@ export function EditorView({ className, note }: EditorViewProps) {
     [save]
   );
 
+  // Handle text selection changes
+  const handleSelectionChange = useCallback((text: string, hasSelection: boolean) => {
+    if (hasSelection && text.trim().length > 0) {
+      // Calculate menu position based on selection
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        const position = calculateMenuPosition(
+          {
+            top: rect.top,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom,
+            width: rect.width,
+            height: rect.height,
+          },
+          { width: 280, height: 60 } // Menu dimensions
+        );
+
+        setMenuPosition(position);
+        setShowHighlightMenu(true);
+      }
+    } else {
+      setShowHighlightMenu(false);
+    }
+  }, []);
+
+  // Handle menu option clicks (placeholder for future AI features)
+  const handleOptionClick = useCallback((_option: 'rephrase' | 'summarize' | 'fix-grammar') => {
+    // This will be implemented in Stories 2.3-2.5
+    // For now, buttons are disabled so this won't be called
+  }, []);
+
   // Handle keyboard shortcut for manual save (Cmd+S / Ctrl+S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -90,6 +129,26 @@ export function EditorView({ className, note }: EditorViewProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [forceSave]);
+
+  // Handle click outside menu to dismiss
+  useEffect(() => {
+    if (!showHighlightMenu) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const menuElement = document.querySelector('.highlight-menu');
+      if (menuElement && !menuElement.contains(event.target as Node)) {
+        setShowHighlightMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showHighlightMenu]);
+
+  // Hide menu when note changes
+  useEffect(() => {
+    setShowHighlightMenu(false);
+  }, [activeNoteId]);
 
   // Handle reload button click
   const handleReload = () => {
@@ -232,11 +291,19 @@ export function EditorView({ className, note }: EditorViewProps) {
           <TipTapEditor
             content={noteContent}
             onChange={handleContentChange}
+            onSelectionChange={handleSelectionChange}
             editable={true}
             placeholder="Start typing..."
           />
         </div>
       </ScrollArea>
+
+      {/* Highlight Menu */}
+      <HighlightMenu
+        isVisible={showHighlightMenu}
+        position={menuPosition}
+        onOptionClick={handleOptionClick}
+      />
     </div>
   );
 }
