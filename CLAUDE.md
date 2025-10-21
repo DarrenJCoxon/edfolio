@@ -147,6 +147,17 @@ import { User as PrismaUser } from '@prisma/client';
 
 ## 4. Database & Prisma Standards
 
+### 🔴 CRITICAL: Database Migration Workflow
+**ALL AGENTS MUST READ `/docs/MIGRATION-WORKFLOW.md` BEFORE ANY DATABASE WORK**
+
+**⚠️ RECENT CRITICAL ISSUE DISCOVERED:**
+Previous developers violated migration rules by:
+1. Editing migration files after they were applied
+2. Adding fields to schema.prisma without generating migrations
+3. Causing "migration drift" that would break production
+
+**THIS MUST NEVER HAPPEN AGAIN.**
+
 ### 4.1 Schema Modifications
 **CRITICAL:** All database changes MUST follow this process:
 
@@ -154,7 +165,11 @@ import { User as PrismaUser } from '@prisma/client';
 2. **Generate** migration: `npx prisma migrate dev --name descriptive-name`
 3. **Test** migration locally
 4. **Commit** both schema.prisma AND migration files
-5. **NEVER** manually edit migration files
+5. **NEVER** manually edit migration files after creation
+6. **NEVER** add fields to schema without migrations
+7. **NEVER** modify existing migration SQL files
+
+**Migration files are IMMUTABLE once created. If you need changes, create a NEW migration.**
 
 ### 4.2 Prisma Client Usage
 - **ALWAYS** use the singleton client from `lib/prisma.ts`
@@ -476,10 +491,12 @@ Before marking any story as "Review", Developer Agent MUST verify:
 
 ### 18.2 Developer Agent
 - MUST read this CLAUDE.md file before starting ANY story
+- MUST read `/docs/MIGRATION-WORKFLOW.md` before ANY database work
 - MUST follow ALL standards without exception
 - MUST keep a complete list of changed files
 - MUST run tests before marking story as "Review"
 - MUST NOT skip any tasks in the checklist
+- MUST verify `npx prisma migrate status` shows "up to date" before proceeding
 
 ### 18.3 QA Agent
 - MUST validate ALL Acceptance Criteria
