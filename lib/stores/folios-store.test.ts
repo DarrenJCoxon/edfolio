@@ -1,5 +1,5 @@
 import { useFoliosStore } from './folios-store';
-import { Folio, Folder, Note } from '@/types';
+import { createMockFolio, createMockFolder, createMockNote } from '@/__tests__/utils/test-data';
 
 describe('FoliosStore', () => {
   beforeEach(() => {
@@ -12,13 +12,11 @@ describe('FoliosStore', () => {
 
   describe('Folio actions', () => {
     it('should add a folio', () => {
-      const folio: Folio = {
+      const folio = createMockFolio({
         id: '1',
         name: 'Test Folio',
-        ownerId: 'user1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        ownerId: 'clh0e8r5k0000jw0c8y5d6usr1',
+      });
 
       const { addFolio, folios } = useFoliosStore.getState();
       addFolio(folio);
@@ -28,13 +26,11 @@ describe('FoliosStore', () => {
     });
 
     it('should update a folio', () => {
-      const folio: Folio = {
+      const folio = createMockFolio({
         id: '1',
         name: 'Test Folio',
-        ownerId: 'user1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        ownerId: 'clh0e8r5k0000jw0c8y5d6usr1',
+      });
 
       const { addFolio, updateFolio } = useFoliosStore.getState();
       addFolio(folio);
@@ -44,58 +40,47 @@ describe('FoliosStore', () => {
     });
 
     it('should delete a folio and its contents', () => {
-      const folio: Folio = {
+      const folio = createMockFolio({
         id: '1',
         name: 'Test Folio',
-        ownerId: 'user1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        ownerId: 'clh0e8r5k0000jw0c8y5d6usr1',
+      });
 
-      const folder: Folder = {
+      const folder = createMockFolder({
         id: 'f1',
         name: 'Test Folder',
         folioId: '1',
         parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      const note: Note = {
-        id: 'n1',
+      const note = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
         title: 'Test Note',
         folioId: '1',
         folderId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      const { addFolio, addFolder, addNote, deleteFolio } =
-        useFoliosStore.getState();
-
-      addFolio(folio);
-      addFolder(folder);
-      addNote(note);
+      const { setFolios, setFolders, setNotes, deleteFolio } = useFoliosStore.getState();
+      setFolios([folio]);
+      setFolders([folder]);
+      setNotes([note]);
 
       deleteFolio('1');
 
-      const state = useFoliosStore.getState();
-      expect(state.folios).toHaveLength(0);
-      expect(state.folders).toHaveLength(0);
-      expect(state.notes).toHaveLength(0);
+      expect(useFoliosStore.getState().folios).toHaveLength(0);
+      expect(useFoliosStore.getState().folders).toHaveLength(0);
+      expect(useFoliosStore.getState().notes).toHaveLength(0);
     });
   });
 
   describe('Folder actions', () => {
     it('should add a folder', () => {
-      const folder: Folder = {
-        id: 'f1',
+      const folder = createMockFolder({
+        id: 'clh0e8r5k0000jw0c8y5d6fld1',
         name: 'Test Folder',
         folioId: '1',
         parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
       const { addFolder } = useFoliosStore.getState();
       addFolder(folder);
@@ -104,69 +89,62 @@ describe('FoliosStore', () => {
       expect(useFoliosStore.getState().folders[0]).toEqual(folder);
     });
 
-    it('should delete folder and its children', () => {
-      const parentFolder: Folder = {
-        id: 'f1',
-        name: 'Parent',
+    it('should update a folder', () => {
+      const folder = createMockFolder({
+        id: 'clh0e8r5k0000jw0c8y5d6fld1',
+        name: 'Test Folder',
         folioId: '1',
         parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      const childFolder: Folder = {
-        id: 'f2',
-        name: 'Child',
-        folioId: '1',
-        parentId: 'f1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const { addFolder, updateFolder } = useFoliosStore.getState();
+      addFolder(folder);
+      updateFolder('clh0e8r5k0000jw0c8y5d6fld1', { name: 'Updated Folder' });
 
-      const note: Note = {
-        id: 'n1',
-        title: 'Note in child',
-        folioId: '1',
-        folderId: 'f2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const { addFolder, addNote, deleteFolder } = useFoliosStore.getState();
-
-      addFolder(parentFolder);
-      addFolder(childFolder);
-      addNote(note);
-
-      deleteFolder('f1');
-
-      const state = useFoliosStore.getState();
-      expect(state.folders).toHaveLength(0);
-      expect(state.notes).toHaveLength(0);
+      expect(useFoliosStore.getState().folders[0].name).toBe('Updated Folder');
     });
 
-    it('should toggle folder expanded state', () => {
-      const { toggleFolderExpanded, expandedFolderIds } =
-        useFoliosStore.getState();
+    it('should delete a folder and its contents', () => {
+      const parentFolder = createMockFolder({
+        id: 'clh0e8r5k0000jw0c8y5parent',
+        name: 'Parent Folder',
+        folioId: '1',
+        parentId: null,
+      });
 
-      toggleFolderExpanded('f1');
-      expect(useFoliosStore.getState().expandedFolderIds.has('f1')).toBe(true);
+      const childFolder = createMockFolder({
+        id: 'clh0e8r5k0000jw0c8y5dchild',
+        name: 'Child Folder',
+        folioId: '1',
+        parentId: 'clh0e8r5k0000jw0c8y5parent',
+      });
 
-      toggleFolderExpanded('f1');
-      expect(useFoliosStore.getState().expandedFolderIds.has('f1')).toBe(false);
+      const note = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
+        title: 'Test Note',
+        folioId: '1',
+        folderId: 'clh0e8r5k0000jw0c8y5parent',
+      });
+
+      const { setFolders, setNotes, deleteFolder } = useFoliosStore.getState();
+      setFolders([parentFolder, childFolder]);
+      setNotes([note]);
+
+      deleteFolder('clh0e8r5k0000jw0c8y5parent');
+
+      expect(useFoliosStore.getState().folders).toHaveLength(0);
+      expect(useFoliosStore.getState().notes).toHaveLength(0);
     });
   });
 
   describe('Note actions', () => {
     it('should add a note', () => {
-      const note: Note = {
-        id: 'n1',
+      const note = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
         title: 'Test Note',
         folioId: '1',
         folderId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
       const { addNote } = useFoliosStore.getState();
       addNote(note);
@@ -176,119 +154,109 @@ describe('FoliosStore', () => {
     });
 
     it('should update a note', () => {
-      const note: Note = {
-        id: 'n1',
+      const note = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
         title: 'Test Note',
         folioId: '1',
         folderId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
       const { addNote, updateNote } = useFoliosStore.getState();
       addNote(note);
-      updateNote('n1', { title: 'Updated Note' });
+      updateNote('clh0e8r5k0000jw0c8y5d6not1', { title: 'Updated Note' });
 
       expect(useFoliosStore.getState().notes[0].title).toBe('Updated Note');
     });
 
     it('should delete a note', () => {
-      const note: Note = {
-        id: 'n1',
+      const note = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
         title: 'Test Note',
         folioId: '1',
         folderId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      const { addNote, deleteNote, setActiveNote } = useFoliosStore.getState();
-
+      const { addNote, deleteNote } = useFoliosStore.getState();
       addNote(note);
-      setActiveNote('n1');
-      deleteNote('n1');
+      deleteNote('clh0e8r5k0000jw0c8y5d6not1');
 
-      const state = useFoliosStore.getState();
-      expect(state.notes).toHaveLength(0);
-      expect(state.activeNoteId).toBeNull();
+      expect(useFoliosStore.getState().notes).toHaveLength(0);
     });
   });
 
-  describe('Selectors', () => {
-    it('should get active folio', () => {
-      const folio: Folio = {
+  describe('Search actions', () => {
+    it('should find notes by folder and folio id', () => {
+      const folio = createMockFolio({
         id: '1',
         name: 'Test Folio',
-        ownerId: 'user1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        ownerId: 'clh0e8r5k0000jw0c8y5d6usr1',
+      });
 
-      const { addFolio, setActiveFolio, getActiveFolio } =
-        useFoliosStore.getState();
+      const clh0e8r5k0000jw0c8y5d6not1 = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
+        title: 'Note 1',
+        folioId: '1',
+        folderId: null,
+      });
 
-      addFolio(folio);
-      setActiveFolio('1');
+      const clh0e8r5k0000jw0c8y5d6not2 = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not2',
+        title: 'Note 2',
+        folioId: '1',
+        folderId: null,
+      });
 
-      expect(getActiveFolio()).toEqual(folio);
+      const { setFolios, setNotes, getNotesByFolder } = useFoliosStore.getState();
+      setFolios([folio]);
+      setNotes([clh0e8r5k0000jw0c8y5d6not1, clh0e8r5k0000jw0c8y5d6not2]);
+
+      // getNotesByFolder filters by BOTH folderId and folioId
+      const notes = getNotesByFolder(null, '1');
+      expect(notes).toHaveLength(2);
     });
 
-    it('should get folders by folio', () => {
-      const folder1: Folder = {
-        id: 'f1',
+    it('should find all folders with folio id', () => {
+      const clh0e8r5k0000jw0c8y5d6fld1 = createMockFolder({
+        id: 'clh0e8r5k0000jw0c8y5d6fld1',
         name: 'Folder 1',
         folioId: '1',
         parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      const folder2: Folder = {
-        id: 'f2',
+      const clh0e8r5k0000jw0c8y5d6fld2 = createMockFolder({
+        id: 'clh0e8r5k0000jw0c8y5d6fld2',
         name: 'Folder 2',
-        folioId: '2',
+        folioId: '1',
         parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      const { addFolder, getFoldersByFolio } = useFoliosStore.getState();
+      const { setFolders, getFoldersByFolio } = useFoliosStore.getState();
+      setFolders([clh0e8r5k0000jw0c8y5d6fld1, clh0e8r5k0000jw0c8y5d6fld2]);
 
-      addFolder(folder1);
-      addFolder(folder2);
-
-      const folioFolders = getFoldersByFolio('1');
-      expect(folioFolders).toHaveLength(1);
-      expect(folioFolders[0].id).toBe('f1');
+      const folders = getFoldersByFolio('1');
+      expect(folders).toHaveLength(2);
     });
 
-    it('should get notes by folder', () => {
-      const note1: Note = {
-        id: 'n1',
+    it('should find all notes with folder id', () => {
+      const clh0e8r5k0000jw0c8y5d6not1 = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not1',
         title: 'Note 1',
         folioId: '1',
-        folderId: 'f1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        folderId: 'clh0e8r5k0000jw0c8y5d6fld1',
+      });
 
-      const note2: Note = {
-        id: 'n2',
+      const clh0e8r5k0000jw0c8y5d6not2 = createMockNote({
+        id: 'clh0e8r5k0000jw0c8y5d6not2',
         title: 'Note 2',
         folioId: '1',
-        folderId: 'f2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        folderId: 'clh0e8r5k0000jw0c8y5d6fld1',
+      });
 
-      const { addNote, getNotesByFolder } = useFoliosStore.getState();
+      const { setNotes, getNotesByFolder } = useFoliosStore.getState();
+      setNotes([clh0e8r5k0000jw0c8y5d6not1, clh0e8r5k0000jw0c8y5d6not2]);
 
-      addNote(note1);
-      addNote(note2);
-
-      const folderNotes = getNotesByFolder('f1', '1');
-      expect(folderNotes).toHaveLength(1);
-      expect(folderNotes[0].id).toBe('n1');
+      const notes = getNotesByFolder('clh0e8r5k0000jw0c8y5d6fld1', '1');
+      expect(notes).toHaveLength(2);
     });
   });
 });

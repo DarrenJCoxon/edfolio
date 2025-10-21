@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import { SignupForm } from '@/components/auth/SignupForm';
 
 export const metadata: Metadata = {
-  title: 'Sign Up | Kanvas',
-  description: 'Create your Kanvas account',
+  title: 'Sign Up | Edfolio',
+  description: 'Create your Edfolio account',
 };
 
 export default function SignupPage() {
@@ -15,7 +15,7 @@ export default function SignupPage() {
             Create an account
           </h1>
           <p className="text-[var(--muted)]">
-            Start your journey with Kanvas
+            Start your journey with Edfolio
           </p>
         </div>
         <SignupForm />
