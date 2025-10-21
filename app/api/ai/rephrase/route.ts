@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { scalewayClient, DEFAULT_MODEL } from '@/lib/ai/scaleway-client';
 import { checkRateLimit } from '@/lib/ai/rate-limiter';
 import { prisma } from '@/lib/prisma';
+import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/ai/spelling-utils';
 
 /**
  * POST /api/ai/rephrase
@@ -84,14 +85,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Call Scaleway AI for rephrasing
+    // 5. Fetch user's spelling preference
+    const spellingPref = await getUserSpellingPreference(session.user.id);
+    const spellingInstruction = getSpellingPromptInstruction(spellingPref);
+
+    // 6. Call Scaleway AI for rephrasing
     const result = await scalewayClient.chat({
       model: DEFAULT_MODEL,
       messages: [
         {
           role: 'system',
           content:
-            'You are an expert writing assistant. Rephrase the following text to improve clarity and style while preserving the original meaning. Return only the rephrased text without explanations or additional commentary.',
+            'You are an expert writing assistant. Rephrase the following text to improve clarity and style while preserving the original meaning. ' +
+            spellingInstruction +
+            ' Return only the rephrased text without explanations or additional commentary.',
         },
         {
           role: 'user',
@@ -106,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     const rephrasedText = result.choices[0].message.content.trim();
 
-    // 6. Return response
+    // 7. Return response
     return NextResponse.json(
       {
         data: {

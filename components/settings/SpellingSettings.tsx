@@ -78,7 +78,7 @@ export function SpellingSettings() {
           Spelling Preference
         </h3>
         <p className="text-sm text-[var(--muted)] mt-[var(--spacing-xs)]">
-          Choose your preferred spelling variant for AI grammar corrections
+          Choose your preferred spelling variant for all AI features (rephrase, summarize, and grammar corrections)
         </p>
       </div>
 

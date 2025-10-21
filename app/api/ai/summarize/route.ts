@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { scalewayClient, DEFAULT_MODEL } from '@/lib/ai/scaleway-client';
 import { checkRateLimit } from '@/lib/ai/rate-limiter';
 import { prisma } from '@/lib/prisma';
+import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/ai/spelling-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,13 +77,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Call Scaleway AI for summarization
+    // 5. Fetch user's spelling preference
+    const spellingPref = await getUserSpellingPreference(session.user.id);
+    const spellingInstruction = getSpellingPromptInstruction(spellingPref);
+
+    // 6. Call Scaleway AI for summarization
     const result = await scalewayClient.chat({
       model: DEFAULT_MODEL,
       messages: [
         {
           role: 'system',
-          content: 'You are an expert writing assistant. Summarize the following text concisely, capturing the key points and main ideas. The summary should be significantly shorter than the original (aim for 20-30% of original length) while preserving the essential information. Return only the summary without explanations or additional commentary.'
+          content: 'You are an expert writing assistant. Summarize the following text concisely, capturing the key points and main ideas. The summary should be significantly shorter than the original (aim for 20-30% of original length) while preserving the essential information. ' +
+            spellingInstruction +
+            ' Return only the summary without explanations or additional commentary.'
         },
         {
           role: 'user',
@@ -95,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     const summary = result.choices[0].message.content.trim();
 
-    // 6. Return response
+    // 7. Return response
     return NextResponse.json(
       {
         data: {
