@@ -1,7 +1,7 @@
 # CLAUDE.md - Non-Negotiable Development Standards
 
-**Version:** 1.0
-**Last Updated:** October 18, 2025
+**Version:** 1.1
+**Last Updated:** October 21, 2025
 **Applies To:** All AI Agents (Scrum Master, Developer, QA)
 
 ---
@@ -362,8 +362,9 @@ const notes = await prisma.note.findMany();
 DATABASE_URL="postgresql://..."
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="generate-strong-secret"
-GOOGLE_VERTEX_AI_ENDPOINT="https://europe-west2-aiplatform.googleapis.com"
-GOOGLE_VERTEX_AI_PROJECT_ID="your-project-id"
+SCALEWAY_API_KEY="your-scaleway-api-key"
+SCALEWAY_PROJECT_ID="your-scaleway-project-id"
+SCALEWAY_REGION="fr-par"
 ```
 
 ### 10.2 Configuration Files
@@ -405,12 +406,13 @@ GOOGLE_VERTEX_AI_PROJECT_ID="your-project-id"
 
 ### 13.1 Critical Requirements
 - **ALL data MUST remain in UK/EU**
-- Use Google Vertex AI Europe endpoint only
+- Use Scaleway AI (EU-based infrastructure only)
 - Railway services must be deployed to Europe region
 - No data transmission to US servers
 
 ### 13.2 Verification
-- Test AI endpoints are EU-based before deployment
+- Test Scaleway AI endpoints are EU-based before deployment
+- Verify Scaleway region is set to EU (fr-par or nl-ams)
 - Verify Railway region in dashboard
 - Document compliance in architecture docs
 
@@ -426,7 +428,7 @@ export async function POST(request: NextRequest) {
 
   // 1. Validate authentication
   // 2. Validate input
-  // 3. Call Vertex AI Europe endpoint
+  // 3. Call Scaleway AI endpoint (EU region)
   // 4. Return result
 }
 ```

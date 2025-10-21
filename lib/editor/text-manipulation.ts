@@ -80,3 +80,32 @@ export function getSelectedText(editor: Editor): string {
   const { from, to } = editor.state.selection;
   return editor.state.doc.textBetween(from, to);
 }
+
+/**
+ * Count the number of words in a text string
+ *
+ * This function splits text by whitespace and filters out empty strings
+ * to provide an accurate word count. Handles edge cases like multiple
+ * spaces, line breaks, and punctuation.
+ *
+ * @param text - Text to count words in
+ * @returns Number of words
+ *
+ * @example
+ * ```typescript
+ * const count = countWords('Hello world');
+ * console.log(count); // 2
+ *
+ * const count2 = countWords('  Multiple   spaces  ');
+ * console.log(count2); // 2
+ * ```
+ */
+export function countWords(text: string): number {
+  if (!text || text.trim().length === 0) {
+    return 0;
+  }
+
+  // Split by whitespace and filter out empty strings
+  const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+  return words.length;
+}
