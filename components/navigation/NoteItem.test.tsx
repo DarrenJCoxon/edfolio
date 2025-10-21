@@ -1,16 +1,17 @@
+/**
+ * @jest-environment jsdom
+ */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NoteItem } from './NoteItem';
-import { Note } from '@/types';
+import { createMockNote } from '@/__tests__/utils/test-data';
 
 describe('NoteItem', () => {
-  const mockNote: Note = {
-    id: 'n1',
+  const mockNote = createMockNote({
+    id: 'clh0e8r5k0000jw0c8y5d6not1',
     title: 'Test Note',
     folioId: 'f1',
     folderId: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  });
 
   const mockProps = {
     note: mockNote,
@@ -34,7 +35,7 @@ describe('NoteItem', () => {
     render(<NoteItem {...mockProps} />);
     const noteItem = screen.getByRole('treeitem');
     fireEvent.click(noteItem);
-    expect(mockProps.onClick).toHaveBeenCalledWith('n1');
+    expect(mockProps.onClick).toHaveBeenCalledWith('clh0e8r5k0000jw0c8y5d6not1');
   });
 
   it('should apply active styles when isActive is true', () => {

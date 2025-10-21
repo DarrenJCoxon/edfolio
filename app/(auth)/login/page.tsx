@@ -3,7 +3,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 
 export const metadata: Metadata = {
   title: 'Login | Kanvas',
-  description: 'Sign in to your Kanvas account',
+  description: 'Sign in to your Edfolio account',
 };
 
 export default function LoginPage() {
@@ -15,7 +15,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="text-[var(--muted)]">
-            Sign in to your Kanvas account
+            Sign in to your Edfolio account
           </p>
         </div>
         <LoginForm />
