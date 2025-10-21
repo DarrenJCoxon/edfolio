@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { nanoid } from 'nanoid';
 
 /**
  * List of reserved slugs that cannot be used for public pages.
@@ -24,6 +25,11 @@ const MAX_SLUG_LENGTH = 100;
  * Maximum attempts to find a unique slug before throwing an error
  */
 const MAX_UNIQUENESS_ATTEMPTS = 100;
+
+/**
+ * Length of the short unique identifier appended to slugs
+ */
+const SHORT_ID_LENGTH = 8;
 
 /**
  * Generates a URL-friendly slug from a page title.
@@ -90,30 +96,49 @@ export function isReservedSlug(slug: string): boolean {
 }
 
 /**
- * Generates a unique slug for a note, handling conflicts automatically.
+ * Generates a short, unique identifier for a published page.
+ *
+ * Uses nanoid to create an 8-character URL-safe identifier.
+ * This is appended to the title slug to create globally unique URLs
+ * in the format: /public/[title-slug]-[short-id]
+ *
+ * @returns An 8-character alphanumeric identifier
+ *
+ * @example
+ * generateShortId() // "a1b2c3d4"
+ * generateShortId() // "x9y8z7w6"
+ */
+export function generateShortId(): string {
+  return nanoid(SHORT_ID_LENGTH);
+}
+
+/**
+ * Generates a unique slug for a note with Notion-style format: [title-slug]-[short-id]
  *
  * Process:
  * 1. Check if base slug is reserved (throw error if true)
- * 2. Query database for existing PublishedPage with this slug
- * 3. If no conflict, return base slug
- * 4. If conflict with same noteId, return base slug (re-publishing same note)
- * 5. If conflict with different noteId, append -2, -3, etc. until unique
- * 6. Maximum MAX_UNIQUENESS_ATTEMPTS attempts (throw error if exceeded)
+ * 2. Check if note is already published (re-use existing shortId)
+ * 3. If new publication, generate new shortId
+ * 4. Verify shortId is unique (retry if collision detected)
+ * 5. Return object with full slug and shortId
  *
- * @param baseSlug - The initial slug generated from the title
+ * @param baseSlug - The title-based slug (e.g., "my-first-note")
  * @param noteId - The ID of the note being published
- * @returns A unique slug that doesn't conflict with existing published pages
+ * @returns Object containing the full slug and shortId
  * @throws Error if slug is reserved or max attempts exceeded
  *
  * @example
  * // First note titled "Guide"
- * await generateUniqueSlug("guide", "note-1") // "guide"
+ * await generateUniqueSlug("guide", "note-1")
+ * // { slug: "guide-a1b2c3d4", shortId: "a1b2c3d4" }
  *
  * // Second note titled "Guide"
- * await generateUniqueSlug("guide", "note-2") // "guide-2"
+ * await generateUniqueSlug("guide", "note-2")
+ * // { slug: "guide-x9y8z7w6", shortId: "x9y8z7w6" }
  *
- * // Re-publishing first note
- * await generateUniqueSlug("guide", "note-1") // "guide" (same as before)
+ * // Re-publishing first note (preserves shortId)
+ * await generateUniqueSlug("guide", "note-1")
+ * // { slug: "guide-a1b2c3d4", shortId: "a1b2c3d4" }
  *
  * // Reserved slug
  * await generateUniqueSlug("api", "note-3") // throws Error
@@ -121,7 +146,7 @@ export function isReservedSlug(slug: string): boolean {
 export async function generateUniqueSlug(
   baseSlug: string,
   noteId: string
-): Promise<string> {
+): Promise<{ slug: string; shortId: string }> {
   // Check if base slug is reserved
   if (isReservedSlug(baseSlug)) {
     throw new Error(
@@ -129,47 +154,47 @@ export async function generateUniqueSlug(
     );
   }
 
-  // Check if base slug is available
+  // Check if this note already has a published page (handle re-publishing)
   const existingPage = await prisma.publishedPage.findUnique({
-    where: { slug: baseSlug },
-    select: { noteId: true },
+    where: { noteId },
+    select: { shortId: true },
   });
 
-  // If no conflict, base slug is available
-  if (!existingPage) {
-    return baseSlug;
+  // If re-publishing, reuse the existing shortId
+  if (existingPage) {
+    const fullSlug = `${baseSlug}-${existingPage.shortId}`;
+    return {
+      slug: fullSlug,
+      shortId: existingPage.shortId,
+    };
   }
 
-  // If existing page belongs to the same note, return base slug
-  // (This handles re-publishing the same note)
-  if (existingPage.noteId === noteId) {
-    return baseSlug;
-  }
+  // New publication - generate unique shortId
+  let attempt = 0;
+  while (attempt < MAX_UNIQUENESS_ATTEMPTS) {
+    const shortId = generateShortId();
 
-  // Slug conflict with different note - find unique variant
-  let attempt = 2;
-  while (attempt <= MAX_UNIQUENESS_ATTEMPTS) {
-    const candidateSlug = `${baseSlug}-${attempt}`;
-
-    const conflictingPage = await prisma.publishedPage.findUnique({
-      where: { slug: candidateSlug },
-      select: { noteId: true },
+    // Check if this shortId already exists (collision check)
+    const collision = await prisma.publishedPage.findUnique({
+      where: { shortId },
+      select: { id: true },
     });
 
-    if (!conflictingPage) {
-      return candidateSlug;
+    // No collision - use this shortId
+    if (!collision) {
+      const fullSlug = `${baseSlug}-${shortId}`;
+      return {
+        slug: fullSlug,
+        shortId,
+      };
     }
 
-    // If this variant belongs to the same note, use it
-    if (conflictingPage.noteId === noteId) {
-      return candidateSlug;
-    }
-
+    // Collision detected (extremely rare with nanoid) - retry
     attempt++;
   }
 
-  // Max attempts exceeded
+  // Max attempts exceeded (should never happen with nanoid)
   throw new Error(
-    `Unable to generate unique slug for "${baseSlug}" after ${MAX_UNIQUENESS_ATTEMPTS} attempts. Please choose a different title.`
+    `Unable to generate unique identifier after ${MAX_UNIQUENESS_ATTEMPTS} attempts. Please try again.`
   );
 }

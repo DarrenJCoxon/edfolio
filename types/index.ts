@@ -209,6 +209,7 @@ export interface GrammarFixPreviewProps {
 export interface PublishResponse {
   data: {
     slug: string;
+    shortId: string;
     publicUrl: string;
   };
 }
@@ -249,4 +250,27 @@ export interface UnpublishConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   publicUrl: string;
+}
+
+// Outline Drawer types
+
+/**
+ * Represents a heading item extracted from the document
+ */
+export interface HeadingItem {
+  id: string;
+  level: 1 | 2 | 3;
+  text: string;
+  position: number;
+}
+
+/**
+ * Props for OutlineDrawer component
+ */
+export interface OutlineDrawerProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  headings: HeadingItem[];
+  activeHeadingId: string | null;
+  onHeadingClick: (headingId: string) => void;
 }
