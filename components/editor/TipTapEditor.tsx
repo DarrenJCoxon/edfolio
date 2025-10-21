@@ -16,10 +16,13 @@ import { Callout } from '@/lib/editor/callout';
 import { SlashCommands } from '@/lib/editor/slash-commands/extension';
 import { lowlight } from '@/lib/editor/code-block-config';
 
+import type { Editor as TipTapEditorType } from '@tiptap/react';
+
 export interface TipTapEditorProps {
   content: unknown;
   onChange: (content: unknown) => void;
   onSelectionChange?: (text: string, hasSelection: boolean) => void;
+  onEditorReady?: (editor: TipTapEditorType) => void;
   editable?: boolean;
   placeholder?: string;
   className?: string;
@@ -29,6 +32,7 @@ export function TipTapEditor({
   content,
   onChange,
   onSelectionChange,
+  onEditorReady,
   editable = true,
   placeholder = 'Start typing...',
   className,
@@ -108,6 +112,13 @@ export function TipTapEditor({
       editor.setEditable(editable);
     }
   }, [editable, editor]);
+
+  // Notify parent component when editor is ready
+  useEffect(() => {
+    if (editor && onEditorReady) {
+      onEditorReady(editor);
+    }
+  }, [editor, onEditorReady]);
 
   if (!editor) {
     return null;

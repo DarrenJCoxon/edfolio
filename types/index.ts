@@ -117,3 +117,27 @@ export interface TextSelection {
   from: number;
   to: number;
 }
+
+// AI Rephrase types
+
+export interface RephraseRequest {
+  text: string;
+  vaultId: string;
+  noteId: string;
+}
+
+export interface RephraseResponse {
+  data: {
+    originalText: string;
+    rephrasedText: string;
+  };
+}
+
+export interface RephrasePreviewProps {
+  isOpen: boolean;
+  originalText: string;
+  rephrasedText: string;
+  onAccept: () => void;
+  onReject: () => void;
+  isApplying: boolean;
+}
