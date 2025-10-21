@@ -41,6 +41,7 @@
     "@tiptap/extension-table-row": "^3.7.2",
     "@tiptap/extension-text": "^3.7.2",
     "@tiptap/extension-typography": "^3.7.2",
+    "@tiptap/html": "^3.7.2",
     "@tiptap/pm": "^3.7.2",
     "@tiptap/react": "^3.7.2",
     "@tiptap/starter-kit": "^3.7.2",

@@ -200,3 +200,53 @@ export interface GrammarFixPreviewProps {
   onReject: () => void;
   isApplying: boolean;
 }
+
+// Publishing types
+
+/**
+ * Response after successfully publishing a note
+ */
+export interface PublishResponse {
+  data: {
+    slug: string;
+    publicUrl: string;
+  };
+}
+
+/**
+ * Response for publication status check
+ */
+export interface PublicationStatusResponse {
+  isPublished: boolean;
+  slug: string | null;
+}
+
+/**
+ * Props for PublicPageLayout component
+ */
+export interface PublicPageLayoutProps {
+  title: string;
+  content: unknown; // TipTap JSON content
+  publishedAt: Date;
+}
+
+/**
+ * Props for PublishButton component
+ */
+export interface PublishButtonProps {
+  noteId: string;
+  isPublished: boolean;
+  publishedSlug?: string | null;
+  onPublishSuccess: (slug: string) => void;
+  onUnpublishSuccess: () => void;
+}
+
+/**
+ * Props for UnpublishConfirmDialog component
+ */
+export interface UnpublishConfirmDialogProps {
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  publicUrl: string;
+}

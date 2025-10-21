@@ -9,6 +9,7 @@ import { HighlightMenu } from './HighlightMenu';
 import { RephrasePreview } from './RephrasePreview';
 import { SummarizePreview } from './SummarizePreview';
 import { GrammarFixPreview } from './GrammarFixPreview';
+import { PublishButton } from './PublishButton';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
 import { EditorViewProps, RephraseResponse, SummarizeResponse, FixGrammarResponse } from '@/types';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,8 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [correctedText, setCorrectedText] = useState('');
   const [hasGrammarChanges, setHasGrammarChanges] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
   const editorInstanceRef = useRef<unknown | null>(null);
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
@@ -518,6 +521,38 @@ export function EditorView({ className, note }: EditorViewProps) {
     setShowHighlightMenu(false);
   }, [activeNoteId]);
 
+  // Fetch publication status when note changes
+  useEffect(() => {
+    if (!activeNoteId) {
+      setIsPublished(false);
+      setPublishedSlug(null);
+      return;
+    }
+
+    const fetchPublicationStatus = async () => {
+      try {
+        const response = await fetch(`/api/notes/${activeNoteId}/publish/status`);
+
+        if (!response.ok) {
+          // If error fetching status, assume not published
+          setIsPublished(false);
+          setPublishedSlug(null);
+          return;
+        }
+
+        const data = await response.json();
+        setIsPublished(data.isPublished);
+        setPublishedSlug(data.slug);
+      } catch (error) {
+        console.error('Error fetching publication status:', error);
+        setIsPublished(false);
+        setPublishedSlug(null);
+      }
+    };
+
+    fetchPublicationStatus();
+  }, [activeNoteId]);
+
   // Handle reload button click
   const handleReload = () => {
     if (activeNoteId) {
@@ -561,6 +596,18 @@ export function EditorView({ className, note }: EditorViewProps) {
   const handleFileNameEditStart = () => {
     setIsEditingFileName(true);
   };
+
+  // Handle successful publish
+  const handlePublishSuccess = useCallback((slug: string) => {
+    setIsPublished(true);
+    setPublishedSlug(slug);
+  }, []);
+
+  // Handle successful unpublish
+  const handleUnpublishSuccess = useCallback(() => {
+    setIsPublished(false);
+    setPublishedSlug(null);
+  }, []);
 
   // Empty state - no note selected
   if (!activeNoteId) {
@@ -639,7 +686,7 @@ export function EditorView({ className, note }: EditorViewProps) {
         className
       )}
     >
-      {/* Header with save indicator */}
+      {/* Header with save indicator and publish button */}
       <div className="flex items-center justify-between p-[var(--spacing-md)] border-b border-[var(--border)]">
         <h2 className="text-sm font-semibold text-[var(--foreground)]">
           <InlineFileNameEditor
@@ -650,7 +697,16 @@ export function EditorView({ className, note }: EditorViewProps) {
             onEditStart={handleFileNameEditStart}
           />
         </h2>
-        <SaveIndicator status={saveStatus} error={saveError} />
+        <div className="flex items-center gap-[var(--spacing-md)]">
+          <PublishButton
+            noteId={activeNoteId}
+            isPublished={isPublished}
+            publishedSlug={publishedSlug}
+            onPublishSuccess={handlePublishSuccess}
+            onUnpublishSuccess={handleUnpublishSuccess}
+          />
+          <SaveIndicator status={saveStatus} error={saveError} />
+        </div>
       </div>
 
       {/* Editor content */}
