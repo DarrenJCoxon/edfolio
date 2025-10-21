@@ -19,6 +19,7 @@ import { lowlight } from '@/lib/editor/code-block-config';
 export interface TipTapEditorProps {
   content: unknown;
   onChange: (content: unknown) => void;
+  onSelectionChange?: (text: string, hasSelection: boolean) => void;
   editable?: boolean;
   placeholder?: string;
   className?: string;
@@ -27,6 +28,7 @@ export interface TipTapEditorProps {
 export function TipTapEditor({
   content,
   onChange,
+  onSelectionChange,
   editable = true,
   placeholder = 'Start typing...',
   className,
@@ -69,6 +71,11 @@ export function TipTapEditor({
     editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      const text = editor.state.doc.textBetween(from, to);
+      onSelectionChange?.(text, from !== to);
     },
     editorProps: {
       attributes: {
