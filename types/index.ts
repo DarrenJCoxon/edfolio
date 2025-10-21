@@ -165,3 +165,33 @@ export interface SummarizePreviewProps {
   onReject: () => void;
   isApplying: boolean;
 }
+
+// User Settings types
+
+export type SpellingPreference = 'UK' | 'US';
+
+// AI Fix Grammar types
+
+export interface FixGrammarRequest {
+  text: string;
+  vaultId: string;
+  noteId: string;
+}
+
+export interface FixGrammarResponse {
+  data: {
+    originalText: string;
+    correctedText: string;
+    hasChanges: boolean;
+  };
+}
+
+export interface GrammarFixPreviewProps {
+  isOpen: boolean;
+  originalText: string;
+  correctedText: string;
+  hasChanges: boolean;
+  onAccept: () => void;
+  onReject: () => void;
+  isApplying: boolean;
+}

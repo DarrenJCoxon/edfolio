@@ -126,6 +126,10 @@
   --preview-summary-bg: #eff6ff;        /* Light blue for summary */
   --preview-summary-border: #3b82f6;    /* Blue accent border */
 
+  /* Grammar Fix Preview Dialog */
+  --preview-corrected-bg: #fef2f2;      /* Light red for corrected text */
+  --preview-corrected-border: #ef4444;  /* Red accent border */
+
   /* Sidebar (for shadcn compatibility) */
   --sidebar: #FFFFFF;
   --sidebar-foreground: #1A1A1A;
@@ -199,6 +203,10 @@
     /* Summarize Preview Dialog - Dark Mode */
     --preview-summary-bg: #1e3a5f;      /* Dark blue for dark mode */
     --preview-summary-border: #60a5fa;  /* Lighter blue border for dark mode */
+
+    /* Grammar Fix Preview Dialog - Dark Mode */
+    --preview-corrected-bg: #450a0a;    /* Dark red for dark mode */
+    --preview-corrected-border: #f87171; /* Lighter red border for dark mode */
   }
 }
 
@@ -257,6 +265,10 @@
   /* Summarize Preview Dialog - Dark Mode */
   --preview-summary-bg: #1e3a5f;      /* Dark blue for dark mode */
   --preview-summary-border: #60a5fa;  /* Lighter blue border for dark mode */
+
+  /* Grammar Fix Preview Dialog - Dark Mode */
+  --preview-corrected-bg: #450a0a;    /* Dark red for dark mode */
+  --preview-corrected-border: #f87171; /* Lighter red border for dark mode */
 }
 
 @layer base {
@@ -710,6 +722,18 @@ html, body {
 .summarize-preview-summary {
   background-color: var(--preview-summary-bg);
   border-left: 3px solid var(--preview-summary-border);
+}
+
+/* Grammar Fix Preview Styles */
+.grammar-fix-preview-corrected {
+  background-color: var(--preview-corrected-bg);
+  border-left: 3px solid var(--preview-corrected-border);
+}
+
+.no-changes-message {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--muted);
 }
 
 .word-count {

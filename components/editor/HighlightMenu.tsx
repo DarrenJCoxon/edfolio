@@ -76,12 +76,16 @@ export function HighlightMenu({
       <button
         className={cn('highlight-menu-button')}
         onClick={() => onOptionClick('fix-grammar')}
-        disabled={true}
-        title="Coming in Story 2.5"
-        aria-label="Fix grammar in selected text (coming soon)"
+        disabled={isProcessing}
+        title="Fix spelling and grammar"
+        aria-label="Fix spelling and grammar in selected text"
         type="button"
       >
-        <Check className="h-4 w-4" aria-hidden="true" />
+        {isProcessing && processingOption === 'fix-grammar' ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <Check className="h-4 w-4" aria-hidden="true" />
+        )}
         <span>Fix Grammar</span>
       </button>
     </div>
