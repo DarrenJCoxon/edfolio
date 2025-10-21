@@ -8,8 +8,9 @@ import { InlineFileNameEditor } from './InlineFileNameEditor';
 import { HighlightMenu } from './HighlightMenu';
 import { RephrasePreview } from './RephrasePreview';
 import { SummarizePreview } from './SummarizePreview';
+import { GrammarFixPreview } from './GrammarFixPreview';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
-import { EditorViewProps, RephraseResponse, SummarizeResponse } from '@/types';
+import { EditorViewProps, RephraseResponse, SummarizeResponse, FixGrammarResponse } from '@/types';
 import { cn } from '@/lib/utils';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,9 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [originalText, setOriginalText] = useState('');
   const [showSummarizePreview, setShowSummarizePreview] = useState(false);
   const [summary, setSummary] = useState('');
+  const [showGrammarFixPreview, setShowGrammarFixPreview] = useState(false);
+  const [correctedText, setCorrectedText] = useState('');
+  const [hasGrammarChanges, setHasGrammarChanges] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const editorInstanceRef = useRef<unknown | null>(null);
   const activeNoteId = note?.id;
@@ -256,9 +260,62 @@ export function EditorView({ className, note }: EditorViewProps) {
           setIsProcessing(false);
           setProcessingOption(null);
         }
-      } else {
-        // fix-grammar not implemented yet (Story 2.5)
-        return;
+      } else if (option === 'fix-grammar') {
+        setIsProcessing(true);
+        setProcessingOption(option);
+        setOriginalText(selectedText);
+
+        try {
+          const response = await fetch('/api/ai/fix-grammar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: selectedText,
+              vaultId: note.folioId,
+              noteId: activeNoteId,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+
+            // Handle specific error cases
+            if (response.status === 401) {
+              throw new Error('Please log in to use AI features');
+            } else if (response.status === 429) {
+              const retryAfter = response.headers.get('Retry-After');
+              throw new Error(
+                `Too many requests. Please wait ${retryAfter || '60'} seconds.`
+              );
+            } else if (response.status === 500 || response.status === 503) {
+              throw new Error('AI service is temporarily unavailable. Please try again later.');
+            } else {
+              throw new Error(error.error || 'Failed to fix grammar');
+            }
+          }
+
+          const data: FixGrammarResponse = await response.json();
+          setCorrectedText(data.data.correctedText);
+          setHasGrammarChanges(data.data.hasChanges);
+          setShowGrammarFixPreview(true);
+        } catch (error) {
+          console.error('Fix grammar error:', error);
+
+          let errorMessage = 'Failed to fix grammar. Please try again.';
+
+          if (error instanceof Error) {
+            if (error.message.includes('Failed to fetch')) {
+              errorMessage = 'Connection failed. Please check your internet connection.';
+            } else {
+              errorMessage = error.message;
+            }
+          }
+
+          toast.error(errorMessage);
+        } finally {
+          setIsProcessing(false);
+          setProcessingOption(null);
+        }
       }
     },
     [selectedText, activeNoteId, note?.folioId]
@@ -370,6 +427,61 @@ export function EditorView({ className, note }: EditorViewProps) {
   const handleRejectSummary = useCallback(() => {
     setShowSummarizePreview(false);
     setSummary('');
+    // Keep highlight menu open so user can try again
+  }, []);
+
+  // Handle accept grammar fix
+  const handleAcceptGrammarFix = useCallback(async () => {
+    // Type assertion for editor instance
+    const editor = editorInstanceRef.current as {
+      state: { selection: { from: number; to: number } };
+      chain: () => {
+        focus: () => {
+          deleteRange: (range: { from: number; to: number }) => {
+            insertContentAt: (pos: number, content: string) => {
+              run: () => void;
+            };
+          };
+        };
+      };
+    } | null;
+
+    if (!editor) {
+      toast.error('Editor not ready. Please try again.');
+      return;
+    }
+
+    setIsApplying(true);
+
+    try {
+      // Get current selection range
+      const { from, to } = editor.state.selection;
+
+      // Replace text in editor using TipTap chain API
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from, to })
+        .insertContentAt(from, correctedText)
+        .run();
+
+      // Auto-save will trigger via editor onChange
+      setShowGrammarFixPreview(false);
+      setShowHighlightMenu(false);
+      toast.success('Grammar and spelling corrected');
+    } catch (error) {
+      console.error('Apply grammar fix error:', error);
+      toast.error('Failed to apply corrections');
+    } finally {
+      setIsApplying(false);
+    }
+  }, [correctedText]);
+
+  // Handle reject grammar fix
+  const handleRejectGrammarFix = useCallback(() => {
+    setShowGrammarFixPreview(false);
+    setCorrectedText('');
+    setHasGrammarChanges(false);
     // Keep highlight menu open so user can try again
   }, []);
 
@@ -581,6 +693,17 @@ export function EditorView({ className, note }: EditorViewProps) {
         summary={summary}
         onAccept={handleAcceptSummary}
         onReject={handleRejectSummary}
+        isApplying={isApplying}
+      />
+
+      {/* Grammar Fix Preview Dialog */}
+      <GrammarFixPreview
+        isOpen={showGrammarFixPreview}
+        originalText={originalText}
+        correctedText={correctedText}
+        hasChanges={hasGrammarChanges}
+        onAccept={handleAcceptGrammarFix}
+        onReject={handleRejectGrammarFix}
         isApplying={isApplying}
       />
     </div>

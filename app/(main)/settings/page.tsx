@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeSwitcher } from '@/components/settings/ThemeSwitcher';
+import { SpellingSettings } from '@/components/settings/SpellingSettings';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -31,6 +32,13 @@ export default function SettingsPage() {
               Appearance
             </h2>
             <ThemeSwitcher />
+          </section>
+
+          <section className="border-b border-[var(--border)] pb-[var(--spacing-lg)]">
+            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-[var(--spacing-md)]">
+              Preferences
+            </h2>
+            <SpellingSettings />
           </section>
 
           {/* Future settings sections can be added here */}
