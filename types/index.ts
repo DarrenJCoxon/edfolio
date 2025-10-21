@@ -141,3 +141,27 @@ export interface RephrasePreviewProps {
   onReject: () => void;
   isApplying: boolean;
 }
+
+// AI Summarize types
+
+export interface SummarizeRequest {
+  text: string;
+  vaultId: string;
+  noteId: string;
+}
+
+export interface SummarizeResponse {
+  data: {
+    originalText: string;
+    summary: string;
+  };
+}
+
+export interface SummarizePreviewProps {
+  isOpen: boolean;
+  originalText: string;
+  summary: string;
+  onAccept: () => void;
+  onReject: () => void;
+  isApplying: boolean;
+}

@@ -7,14 +7,16 @@ import { SaveIndicator } from './SaveIndicator';
 import { InlineFileNameEditor } from './InlineFileNameEditor';
 import { HighlightMenu } from './HighlightMenu';
 import { RephrasePreview } from './RephrasePreview';
+import { SummarizePreview } from './SummarizePreview';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
-import { EditorViewProps, RephraseResponse } from '@/types';
+import { EditorViewProps, RephraseResponse, SummarizeResponse } from '@/types';
 import { cn } from '@/lib/utils';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFoliosStore } from '@/lib/stores/folios-store';
 import { toast } from 'sonner';
 import { calculateMenuPosition } from '@/lib/editor/menu-positioning';
+import { countWords } from '@/lib/editor/text-manipulation';
 
 export function EditorView({ className, note }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
@@ -29,6 +31,8 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [showRephrasePreview, setShowRephrasePreview] = useState(false);
   const [rephrasedText, setRephrasedText] = useState('');
   const [originalText, setOriginalText] = useState('');
+  const [showSummarizePreview, setShowSummarizePreview] = useState(false);
+  const [summary, setSummary] = useState('');
   const [isApplying, setIsApplying] = useState(false);
   const editorInstanceRef = useRef<unknown | null>(null);
   const activeNoteId = note?.id;
@@ -130,69 +134,131 @@ export function EditorView({ className, note }: EditorViewProps) {
   // Handle menu option clicks
   const handleOptionClick = useCallback(
     async (option: 'rephrase' | 'summarize' | 'fix-grammar') => {
-      if (option !== 'rephrase') {
-        // Other options not implemented yet (Stories 2.4, 2.5)
-        return;
-      }
-
       if (!selectedText || !activeNoteId || !note?.folioId) {
-        toast.error('Unable to rephrase. Please try selecting text again.');
+        toast.error('Unable to process text. Please try selecting text again.');
         return;
       }
 
-      setIsProcessing(true);
-      setProcessingOption(option);
-      setOriginalText(selectedText);
+      if (option === 'rephrase') {
+        setIsProcessing(true);
+        setProcessingOption(option);
+        setOriginalText(selectedText);
 
-      try {
-        const response = await fetch('/api/ai/rephrase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: selectedText,
-            vaultId: note.folioId,
-            noteId: activeNoteId,
-          }),
-        });
+        try {
+          const response = await fetch('/api/ai/rephrase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: selectedText,
+              vaultId: note.folioId,
+              noteId: activeNoteId,
+            }),
+          });
 
-        if (!response.ok) {
-          const error = await response.json();
+          if (!response.ok) {
+            const error = await response.json();
 
-          // Handle specific error cases
-          if (response.status === 401) {
-            throw new Error('Please log in to use AI features');
-          } else if (response.status === 429) {
-            const retryAfter = response.headers.get('Retry-After');
-            throw new Error(
-              `Too many requests. Please wait ${retryAfter || '60'} seconds.`
-            );
-          } else if (response.status === 500 || response.status === 503) {
-            throw new Error('AI service is temporarily unavailable. Please try again later.');
-          } else {
-            throw new Error(error.error || 'Failed to rephrase text');
+            // Handle specific error cases
+            if (response.status === 401) {
+              throw new Error('Please log in to use AI features');
+            } else if (response.status === 429) {
+              const retryAfter = response.headers.get('Retry-After');
+              throw new Error(
+                `Too many requests. Please wait ${retryAfter || '60'} seconds.`
+              );
+            } else if (response.status === 500 || response.status === 503) {
+              throw new Error('AI service is temporarily unavailable. Please try again later.');
+            } else {
+              throw new Error(error.error || 'Failed to rephrase text');
+            }
           }
+
+          const data: RephraseResponse = await response.json();
+          setRephrasedText(data.data.rephrasedText);
+          setShowRephrasePreview(true);
+        } catch (error) {
+          console.error('Rephrase error:', error);
+
+          let errorMessage = 'Failed to rephrase text. Please try again.';
+
+          if (error instanceof Error) {
+            if (error.message.includes('Failed to fetch')) {
+              errorMessage = 'Connection failed. Please check your internet connection.';
+            } else {
+              errorMessage = error.message;
+            }
+          }
+
+          toast.error(errorMessage);
+        } finally {
+          setIsProcessing(false);
+          setProcessingOption(null);
+        }
+      } else if (option === 'summarize') {
+        // Validate minimum word count
+        const wordCount = countWords(selectedText);
+        if (wordCount < 50) {
+          toast.error('Please select at least 50 words to summarize');
+          return;
         }
 
-        const data: RephraseResponse = await response.json();
-        setRephrasedText(data.data.rephrasedText);
-        setShowRephrasePreview(true);
-      } catch (error) {
-        console.error('Rephrase error:', error);
+        setIsProcessing(true);
+        setProcessingOption(option);
+        setOriginalText(selectedText);
 
-        let errorMessage = 'Failed to rephrase text. Please try again.';
+        try {
+          const response = await fetch('/api/ai/summarize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: selectedText,
+              vaultId: note.folioId,
+              noteId: activeNoteId,
+            }),
+          });
 
-        if (error instanceof Error) {
-          if (error.message.includes('Failed to fetch')) {
-            errorMessage = 'Connection failed. Please check your internet connection.';
-          } else {
-            errorMessage = error.message;
+          if (!response.ok) {
+            const error = await response.json();
+
+            // Handle specific error cases
+            if (response.status === 401) {
+              throw new Error('Please log in to use AI features');
+            } else if (response.status === 429) {
+              const retryAfter = response.headers.get('Retry-After');
+              throw new Error(
+                `Too many requests. Please wait ${retryAfter || '60'} seconds.`
+              );
+            } else if (response.status === 500 || response.status === 503) {
+              throw new Error('AI service is temporarily unavailable. Please try again later.');
+            } else {
+              throw new Error(error.error || 'Failed to summarize text');
+            }
           }
-        }
 
-        toast.error(errorMessage);
-      } finally {
-        setIsProcessing(false);
-        setProcessingOption(null);
+          const data: SummarizeResponse = await response.json();
+          setSummary(data.data.summary);
+          setShowSummarizePreview(true);
+        } catch (error) {
+          console.error('Summarize error:', error);
+
+          let errorMessage = 'Failed to summarize text. Please try again.';
+
+          if (error instanceof Error) {
+            if (error.message.includes('Failed to fetch')) {
+              errorMessage = 'Connection failed. Please check your internet connection.';
+            } else {
+              errorMessage = error.message;
+            }
+          }
+
+          toast.error(errorMessage);
+        } finally {
+          setIsProcessing(false);
+          setProcessingOption(null);
+        }
+      } else {
+        // fix-grammar not implemented yet (Story 2.5)
+        return;
       }
     },
     [selectedText, activeNoteId, note?.folioId]
@@ -250,6 +316,60 @@ export function EditorView({ className, note }: EditorViewProps) {
     setShowRephrasePreview(false);
     setRephrasedText('');
     setOriginalText('');
+    // Keep highlight menu open so user can try again
+  }, []);
+
+  // Handle accept summary
+  const handleAcceptSummary = useCallback(async () => {
+    // Type assertion for editor instance
+    const editor = editorInstanceRef.current as {
+      state: { selection: { from: number; to: number } };
+      chain: () => {
+        focus: () => {
+          deleteRange: (range: { from: number; to: number }) => {
+            insertContentAt: (pos: number, content: string) => {
+              run: () => void;
+            };
+          };
+        };
+      };
+    } | null;
+
+    if (!editor) {
+      toast.error('Editor not ready. Please try again.');
+      return;
+    }
+
+    setIsApplying(true);
+
+    try {
+      // Get current selection range
+      const { from, to } = editor.state.selection;
+
+      // Replace text in editor using TipTap chain API
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from, to })
+        .insertContentAt(from, summary)
+        .run();
+
+      // Auto-save will trigger via editor onChange
+      setShowSummarizePreview(false);
+      setShowHighlightMenu(false);
+      toast.success('Text summarized successfully');
+    } catch (error) {
+      console.error('Apply summary error:', error);
+      toast.error('Failed to apply summary');
+    } finally {
+      setIsApplying(false);
+    }
+  }, [summary]);
+
+  // Handle reject summary
+  const handleRejectSummary = useCallback(() => {
+    setShowSummarizePreview(false);
+    setSummary('');
     // Keep highlight menu open so user can try again
   }, []);
 
@@ -451,6 +571,16 @@ export function EditorView({ className, note }: EditorViewProps) {
         rephrasedText={rephrasedText}
         onAccept={handleAcceptRephrase}
         onReject={handleRejectRephrase}
+        isApplying={isApplying}
+      />
+
+      {/* Summarize Preview Dialog */}
+      <SummarizePreview
+        isOpen={showSummarizePreview}
+        originalText={originalText}
+        summary={summary}
+        onAccept={handleAcceptSummary}
+        onReject={handleRejectSummary}
         isApplying={isApplying}
       />
     </div>

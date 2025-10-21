@@ -60,12 +60,16 @@ export function HighlightMenu({
       <button
         className={cn('highlight-menu-button')}
         onClick={() => onOptionClick('summarize')}
-        disabled={true}
-        title="Coming in Story 2.4"
-        aria-label="Summarize selected text (coming soon)"
+        disabled={isProcessing}
+        title="Summarize selected text"
+        aria-label="Summarize selected text"
         type="button"
       >
-        <FileText className="h-4 w-4" aria-hidden="true" />
+        {isProcessing && processingOption === 'summarize' ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <FileText className="h-4 w-4" aria-hidden="true" />
+        )}
         <span>Summarize</span>
       </button>
 
