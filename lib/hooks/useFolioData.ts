@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFoliosStore } from '@/lib/stores/folios-store';
 
 export function useFolioData() {
-  const { activeFolioId, setFolios, setFolders, setNotes, setActiveFolio } =
+  const { activeFolioId, setFolios, setFolders, setNotes, setActiveFolio, setActiveNote } =
     useFoliosStore();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,6 +71,26 @@ export function useFolioData() {
 
     fetchFolioData();
   }, [activeFolioId]);
+
+  // Restore last active note on initial load
+  useEffect(() => {
+    const restoreLastActiveNote = async () => {
+      try {
+        const response = await fetch('/api/user/last-active-note');
+        if (!response.ok) return;
+
+        const { data } = await response.json();
+        if (data?.lastActiveNoteId) {
+          setActiveNote(data.lastActiveNoteId);
+        }
+      } catch (error) {
+        console.error('Failed to restore last active note:', error);
+      }
+    };
+
+    restoreLastActiveNote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return { isLoading };
 }

@@ -6,6 +6,7 @@ import { useDialogManagement } from '@/lib/hooks/useDialogManagement';
 import { useFolioCrud } from '@/lib/hooks/useFolioCrud';
 import { useSidebarResize } from '@/lib/hooks/useSidebarResize';
 import { useFolioData } from '@/lib/hooks/useFolioData';
+import { usePersistedActiveNote } from '@/lib/hooks/usePersistedActiveNote';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { FileNavigatorProps, Folder, Note } from '@/types';
@@ -34,6 +35,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
   } = useFoliosStore();
 
   const { isLoading } = useFolioData();
+  usePersistedActiveNote();
 
   const {
     createDialog,
