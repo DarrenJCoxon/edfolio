@@ -1,6 +1,6 @@
 # CLAUDE.md - Non-Negotiable Development Standards
 
-**Version:** 1.1
+**Version:** 1.2
 **Last Updated:** October 21, 2025
 **Applies To:** All AI Agents (Scrum Master, Developer, QA)
 
@@ -16,7 +16,7 @@ Every agent working on this project **MUST** read and follow these standards. Fa
 
 ### 1.1 Monorepo Structure
 - All code lives in a single repository
-- Use npm workspaces for package management
+- Use pnpm workspaces for package management
 - No code duplication between frontend and backend
 
 ### 1.2 File Organization
@@ -48,7 +48,53 @@ kanvas/
 └── types/                   # TypeScript type definitions
 ```
 
-### 1.3 Component Structure
+### 1.3 Package Manager
+
+**🚨 CRITICAL: This project uses pnpm, NOT npm**
+
+This is a common source of production deployment failures. Always use pnpm.
+
+**Correct Commands:**
+- ✅ `pnpm install` - Install dependencies
+- ✅ `pnpm add <package>` - Add new package
+- ✅ `pnpm run <script>` - Run package scripts
+- ✅ `pnpm remove <package>` - Remove package
+
+**NEVER Use:**
+- ❌ `npm install` - Wrong package manager
+- ❌ `npm run` - Wrong package manager
+- ❌ `yarn install` - Wrong package manager
+
+**Why pnpm:**
+- Better dependency management and peer dependency resolution
+- Faster installation and more disk-efficient
+- Required for Railway deployment compatibility
+- Resolves version conflicts that blocked previous deployments
+
+**Critical Files:**
+- `pnpm-lock.yaml` - Lock file (MUST be committed with every dependency change)
+- No `package-lock.json` should exist (removed during pnpm migration)
+- No `yarn.lock` should exist
+
+**In Configuration Files:**
+- Railway configs (`railway.toml`) → MUST use `pnpm run`
+- CI/CD configs → MUST use `pnpm`
+- Documentation examples → MUST use `pnpm`
+- Any deployment scripts → MUST use `pnpm`
+
+**Common Mistake:**
+Creating `railway.toml` or other deploy configs with `npm run` commands will cause **silent failures** in production where migrations don't apply.
+
+**Example - railway.toml:**
+```toml
+# ✅ CORRECT
+startCommand = "pnpm run db:migrate && pnpm run start"
+
+# ❌ WRONG - Will fail in production
+startCommand = "npm run db:migrate && npm run start"
+```
+
+### 1.4 Component Structure
 - **Maximum file length:** 250 lines per component file
 - **If exceeded:** Split into sub-components or extract logic to hooks/utilities
 - One component per file
