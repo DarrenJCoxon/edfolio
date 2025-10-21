@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { nanoid } from 'nanoid';
+import { uploadFile, isValidImageType, isValidFileSize } from '@/lib/storage';
 
 /**
  * POST /api/upload
- * Upload an image file to the server
+ * Upload an image file to Scaleway Object Storage (EU-based for GDPR compliance)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -32,14 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-    ];
-    if (!allowedTypes.includes(file.type)) {
+    if (!isValidImageType(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Only images are allowed (jpg, png, gif, webp)' },
         { status: 400 }
@@ -47,37 +38,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
+    if (!isValidFileSize(file.size, 5)) {
       return NextResponse.json(
         { error: 'File too large. Maximum size is 5MB' },
         { status: 400 }
       );
     }
 
-    // Generate unique filename
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `${nanoid()}.${ext}`;
-
-    // Create directory structure
-    const uploadDir = join(
-      process.cwd(),
-      'public',
-      'uploads',
-      'images',
-      session.user.id,
-      noteId || 'temp'
-    );
-    await mkdir(uploadDir, { recursive: true });
-
-    // Save file
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filepath = join(uploadDir, filename);
-    await writeFile(filepath, buffer);
 
-    // Return URL
-    const imageUrl = `/uploads/images/${session.user.id}/${noteId || 'temp'}/${filename}`;
+    // Upload to Scaleway Object Storage
+    const imageUrl = await uploadFile(buffer, {
+      userId: session.user.id,
+      noteId,
+      filename: file.name,
+      contentType: file.type,
+    });
 
     return NextResponse.json({ url: imageUrl });
   } catch (error) {
