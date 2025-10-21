@@ -174,6 +174,52 @@
   }
 }
 
+/* Manual dark mode class (for theme switcher) */
+.dark {
+  /* Colors - Dark Theme */
+  --background: #1A1A1A;
+  --foreground: #F3F4F6;
+  --muted: #9CA3AF;
+  --muted-foreground: #9CA3AF;
+  --border: #374151;
+  --accent: #3B82F6;
+  --accent-foreground: #FFFFFF;
+  --card: #262626;
+  --card-foreground: #F3F4F6;
+  --popover: #262626;
+  --popover-foreground: #F3F4F6;
+  --primary: #F3F4F6;
+  --primary-foreground: #1A1A1A;
+  --secondary: #374151;
+  --secondary-foreground: #F3F4F6;
+  --destructive: #EF4444;
+  --destructive-foreground: #FCA5A5;
+  --destructive-border: #EF4444;
+  --destructive-bg: #450a0a;
+  --input: #374151;
+  --ring: #3B82F6;
+
+  /* Sidebar */
+  --sidebar: #262626;
+  --sidebar-foreground: #F3F4F6;
+  --sidebar-primary: #F3F4F6;
+  --sidebar-primary-foreground: #1A1A1A;
+  --sidebar-accent: #374151;
+  --sidebar-accent-foreground: #F3F4F6;
+  --sidebar-border: #374151;
+  --sidebar-ring: #3B82F6;
+
+  /* Callout Block - Dark Mode */
+  --callout-bg: #374151;
+  --callout-border: #6B7280;
+
+  /* Table styling - Dark Mode */
+  --table-header-bg: rgba(156, 163, 175, 0.2);
+
+  /* Code block styling - Dark Mode */
+  --code-bg: #1E1E1E;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

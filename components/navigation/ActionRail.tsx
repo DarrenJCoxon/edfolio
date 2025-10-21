@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,14 +48,16 @@ export function ActionRail({ className }: ActionRailProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Settings"
-                className="w-10 h-10"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
+              <Link href="/settings">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Settings"
+                  className="w-10 h-10"
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>Settings</p>
