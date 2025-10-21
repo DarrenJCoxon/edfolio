@@ -93,17 +93,44 @@ model Folder {
 }
 
 model Note {
-  id        String   @id @default(cuid())
-  title     String   @default("Untitled")
-  content   Json     @default("{}")
+  id        String          @id @default(cuid())
+  title     String          @default("Untitled")
+  content   Json            @default("{}")
   folioId   String
   folderId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folio     Folio    @relation(fields: [folioId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  folder    Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folio     Folio           @relation(fields: [folioId], references: [id], onDelete: Cascade)
+  published PublishedPage?
 
   @@index([folioId])
   @@index([folderId])
   @@index([updatedAt])
+}
+
+model PublishedPage {
+  id          String    @id @default(cuid())
+  noteId      String    @unique
+  note        Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  slug        String    @unique
+  customSlug  Boolean   @default(false)
+
+  // Publishing settings
+  isPublished Boolean   @default(true)
+  publishedAt DateTime  @default(now())
+  lastUpdated DateTime  @updatedAt
+
+  // SEO metadata (for Story 3.2)
+  metaTitle       String? @db.Text
+  metaDescription String? @db.Text
+  ogImage         String?
+
+  // Analytics (for Story 3.3)
+  viewCount  Int       @default(0)
+  lastViewed DateTime?
+
+  @@index([slug])
+  @@index([noteId])
+  @@index([publishedAt])
 }
