@@ -45,6 +45,7 @@ model User {
   image              String?
   themePreference    String?   @default("system")
   spellingPreference String    @default("UK")
+  lastActiveNoteId   String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   accounts           Account[]
