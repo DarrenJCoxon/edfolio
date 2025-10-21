@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TipTapEditor } from './TipTapEditor';
 import { SaveIndicator } from './SaveIndicator';
 import { InlineFileNameEditor } from './InlineFileNameEditor';
 import { HighlightMenu } from './HighlightMenu';
+import { RephrasePreview } from './RephrasePreview';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
-import { EditorViewProps } from '@/types';
+import { EditorViewProps, RephraseResponse } from '@/types';
 import { cn } from '@/lib/utils';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,14 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [isEditingFileName, setIsEditingFileName] = useState(false);
   const [showHighlightMenu, setShowHighlightMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [selectedText, setSelectedText] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingOption, setProcessingOption] = useState<string | null>(null);
+  const [showRephrasePreview, setShowRephrasePreview] = useState(false);
+  const [rephrasedText, setRephrasedText] = useState('');
+  const [originalText, setOriginalText] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+  const editorInstanceRef = useRef<unknown | null>(null);
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
 
@@ -85,6 +94,7 @@ export function EditorView({ className, note }: EditorViewProps) {
   // Handle text selection changes
   const handleSelectionChange = useCallback((text: string, hasSelection: boolean) => {
     if (hasSelection && text.trim().length > 0) {
+      setSelectedText(text);
       // Calculate menu position based on selection
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
@@ -108,13 +118,139 @@ export function EditorView({ className, note }: EditorViewProps) {
       }
     } else {
       setShowHighlightMenu(false);
+      setSelectedText('');
     }
   }, []);
 
-  // Handle menu option clicks (placeholder for future AI features)
-  const handleOptionClick = useCallback((_option: 'rephrase' | 'summarize' | 'fix-grammar') => {
-    // This will be implemented in Stories 2.3-2.5
-    // For now, buttons are disabled so this won't be called
+  // Handle editor ready callback
+  const handleEditorReady = useCallback((editor: unknown) => {
+    editorInstanceRef.current = editor;
+  }, []);
+
+  // Handle menu option clicks
+  const handleOptionClick = useCallback(
+    async (option: 'rephrase' | 'summarize' | 'fix-grammar') => {
+      if (option !== 'rephrase') {
+        // Other options not implemented yet (Stories 2.4, 2.5)
+        return;
+      }
+
+      if (!selectedText || !activeNoteId || !note?.folioId) {
+        toast.error('Unable to rephrase. Please try selecting text again.');
+        return;
+      }
+
+      setIsProcessing(true);
+      setProcessingOption(option);
+      setOriginalText(selectedText);
+
+      try {
+        const response = await fetch('/api/ai/rephrase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: selectedText,
+            vaultId: note.folioId,
+            noteId: activeNoteId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+
+          // Handle specific error cases
+          if (response.status === 401) {
+            throw new Error('Please log in to use AI features');
+          } else if (response.status === 429) {
+            const retryAfter = response.headers.get('Retry-After');
+            throw new Error(
+              `Too many requests. Please wait ${retryAfter || '60'} seconds.`
+            );
+          } else if (response.status === 500 || response.status === 503) {
+            throw new Error('AI service is temporarily unavailable. Please try again later.');
+          } else {
+            throw new Error(error.error || 'Failed to rephrase text');
+          }
+        }
+
+        const data: RephraseResponse = await response.json();
+        setRephrasedText(data.data.rephrasedText);
+        setShowRephrasePreview(true);
+      } catch (error) {
+        console.error('Rephrase error:', error);
+
+        let errorMessage = 'Failed to rephrase text. Please try again.';
+
+        if (error instanceof Error) {
+          if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Connection failed. Please check your internet connection.';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+
+        toast.error(errorMessage);
+      } finally {
+        setIsProcessing(false);
+        setProcessingOption(null);
+      }
+    },
+    [selectedText, activeNoteId, note?.folioId]
+  );
+
+  // Handle accept rephrase
+  const handleAcceptRephrase = useCallback(async () => {
+    // Type assertion for editor instance
+    const editor = editorInstanceRef.current as {
+      state: { selection: { from: number; to: number } };
+      chain: () => {
+        focus: () => {
+          deleteRange: (range: { from: number; to: number }) => {
+            insertContentAt: (pos: number, content: string) => {
+              run: () => void;
+            };
+          };
+        };
+      };
+    } | null;
+
+    if (!editor) {
+      toast.error('Editor not ready. Please try again.');
+      return;
+    }
+
+    setIsApplying(true);
+
+    try {
+      // Get current selection range
+      const { from, to } = editor.state.selection;
+
+      // Replace text in editor using TipTap chain API
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from, to })
+        .insertContentAt(from, rephrasedText)
+        .run();
+
+      // Auto-save will trigger via editor onChange
+      setShowRephrasePreview(false);
+      setShowHighlightMenu(false);
+      toast.success('Text rephrased successfully');
+    } catch (error) {
+      console.error('Apply rephrase error:', error);
+      toast.error('Failed to apply changes');
+    } finally {
+      setIsApplying(false);
+    }
+  }, [rephrasedText]);
+
+  // Handle reject rephrase
+  const handleRejectRephrase = useCallback(() => {
+    setShowRephrasePreview(false);
+    setRephrasedText('');
+    setOriginalText('');
+    // Keep highlight menu open so user can try again
   }, []);
 
   // Handle keyboard shortcut for manual save (Cmd+S / Ctrl+S)
@@ -292,6 +428,7 @@ export function EditorView({ className, note }: EditorViewProps) {
             content={noteContent}
             onChange={handleContentChange}
             onSelectionChange={handleSelectionChange}
+            onEditorReady={handleEditorReady}
             editable={true}
             placeholder="Start typing..."
           />
@@ -303,6 +440,18 @@ export function EditorView({ className, note }: EditorViewProps) {
         isVisible={showHighlightMenu}
         position={menuPosition}
         onOptionClick={handleOptionClick}
+        isProcessing={isProcessing}
+        processingOption={processingOption}
+      />
+
+      {/* Rephrase Preview Dialog */}
+      <RephrasePreview
+        isOpen={showRephrasePreview}
+        originalText={originalText}
+        rephrasedText={rephrasedText}
+        onAccept={handleAcceptRephrase}
+        onReject={handleRejectRephrase}
+        isApplying={isApplying}
       />
     </div>
   );

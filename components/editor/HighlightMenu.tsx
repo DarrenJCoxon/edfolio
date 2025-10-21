@@ -1,12 +1,14 @@
 'use client';
 
-import { Sparkles, FileText, Check } from 'lucide-react';
+import { Sparkles, FileText, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface HighlightMenuProps {
   isVisible: boolean;
   position: { x: number; y: number };
   onOptionClick: (option: 'rephrase' | 'summarize' | 'fix-grammar') => void;
+  isProcessing?: boolean;
+  processingOption?: string | null;
 }
 
 /**
@@ -23,6 +25,8 @@ export function HighlightMenu({
   isVisible,
   position,
   onOptionClick,
+  isProcessing = false,
+  processingOption = null,
 }: HighlightMenuProps) {
   if (!isVisible) return null;
 
@@ -40,19 +44,23 @@ export function HighlightMenu({
       <button
         className={cn('highlight-menu-button')}
         onClick={() => onOptionClick('rephrase')}
-        disabled
-        title="Coming in Story 2.3"
-        aria-label="Rephrase selected text (coming soon)"
+        disabled={isProcessing}
+        title="Rephrase selected text"
+        aria-label="Rephrase selected text"
         type="button"
       >
-        <Sparkles className="h-4 w-4" aria-hidden="true" />
+        {isProcessing && processingOption === 'rephrase' ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <Sparkles className="h-4 w-4" aria-hidden="true" />
+        )}
         <span>Rephrase</span>
       </button>
 
       <button
         className={cn('highlight-menu-button')}
         onClick={() => onOptionClick('summarize')}
-        disabled
+        disabled={true}
         title="Coming in Story 2.4"
         aria-label="Summarize selected text (coming soon)"
         type="button"
@@ -64,7 +72,7 @@ export function HighlightMenu({
       <button
         className={cn('highlight-menu-button')}
         onClick={() => onOptionClick('fix-grammar')}
-        disabled
+        disabled={true}
         title="Coming in Story 2.5"
         aria-label="Fix grammar in selected text (coming soon)"
         type="button"
