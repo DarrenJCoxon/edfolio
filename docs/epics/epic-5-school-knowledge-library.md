@@ -1,13 +1,13 @@
-# Epic 4: School-Wide Knowledge Library
+# Epic 5: School-Wide Knowledge Library
 
-**Status:** Post-MVP (Requires Epic 3)
+**Status:** Post-MVP (Requires Epic 4)
 **Epic Goal:** To enable educational institutions to create a centralized, curated library of vectorized documents that teachers can leverage across all their chatbots, ensuring consistent, authoritative information sources.
 
 ---
 
 ## Overview
 
-This epic extends the personalized chatbot functionality of Epic 3 to an institutional level, allowing schools to maintain a shared knowledge repository. School administrators can upload and manage official documents, course materials, and policies, which teachers can then link to their chatbots. This creates a single source of truth for institutional knowledge while maintaining the flexibility of personal chatbot customization.
+This epic extends the personalized chatbot functionality of Epic 4 to an institutional level, allowing schools to maintain a shared knowledge repository. School administrators can upload and manage official documents, course materials, and policies, which teachers can then link to their chatbots. This creates a single source of truth for institutional knowledge while maintaining the flexibility of personal chatbot customization.
 
 ---
 
@@ -329,7 +329,7 @@ When a user sends a message to a chatbot that has linked school documents:
 
 1. **Query Embedding:** Generate embedding for user query
 2. **Multi-Source Search:** Perform parallel vector searches:
-   - Personal knowledge base (from Epic 3)
+   - Personal knowledge base (from Epic 4)
    - Linked school library documents
 3. **Result Merging:** Combine results with weighted scoring:
    - Personal documents: weight 0.6
@@ -429,7 +429,7 @@ components/
 
 ## Story Breakdown
 
-### Story 4.1: Admin Library Management Portal
+### Story 5.1: Admin Library Management Portal
 **Goal:** Create a secure interface for school administrators to upload and manage institutional documents
 
 **Scope:**
@@ -466,7 +466,7 @@ components/
 - [ ] School admin can invite teachers by email
 - [ ] School admin can assign/change member roles
 - [ ] School admin can remove members
-- [ ] Documents are processed and vectorized like Epic 3
+- [ ] Documents are processed and vectorized like Epic 4
 - [ ] School admin can edit document metadata
 - [ ] School admin can delete documents
 - [ ] All operations enforce permission checks
@@ -474,7 +474,7 @@ components/
 
 ---
 
-### Story 4.2: Teacher Access to School Library
+### Story 5.2: Teacher Access to School Library
 **Goal:** Enable teachers to browse and link school library documents to their chatbots
 
 **Scope:**
@@ -510,7 +510,7 @@ components/
 
 ---
 
-### Story 4.3: Grounded Chat with School Knowledge
+### Story 5.3: Grounded Chat with School Knowledge
 **Goal:** Enable chatbot conversations that draw from both personal and school knowledge bases
 
 **Scope:**
@@ -747,16 +747,16 @@ AUDIT_LOG_RETENTION_DAYS=365
 ## Epic Dependencies
 
 ### Prerequisites
-- **Epic 3 Complete:** All chatbot and personal knowledge base features
+- **Epic 4 Complete:** All chatbot and personal knowledge base features
 - **PostgreSQL pgvector:** Extension installed and tested
 - **Scaleway Integration:** Stable and performant
 - **Authentication:** NextAuth.js fully configured
 
 ### Parallel Work Possible
-- Story 4.1 can begin immediately after Epic 3
-- Story 4.2 depends on 4.1 completion
-- Story 4.3 depends on 4.2 completion
+- Story 5.1 can begin immediately after Epic 4
+- Story 5.2 depends on 5.1 completion
+- Story 5.3 depends on 5.2 completion
 
 ---
 
-**Next Step:** Begin Story 4.1 implementation or return to Epic 3 if not yet complete.
+**Next Step:** Begin Story 5.1 implementation or return to Epic 4 if not yet complete.
