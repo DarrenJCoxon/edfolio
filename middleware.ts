@@ -3,11 +3,12 @@ import { auth } from '@/lib/auth';
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Allow requests to auth routes and public assets
+  // Allow requests to auth routes, public pages, and public assets
   if (
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
-    pathname.startsWith('/api/auth')
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/public')
   ) {
     return;
   }

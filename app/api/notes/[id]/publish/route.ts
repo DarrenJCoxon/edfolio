@@ -78,9 +78,9 @@ export async function POST(
       );
     }
 
-    // Generate slug from note title
+    // Generate slug from note title (Notion-style: title-slug-shortid)
     const baseSlug = generateSlugFromTitle(note.title);
-    const slug = await generateUniqueSlug(baseSlug, noteId);
+    const { slug, shortId } = await generateUniqueSlug(baseSlug, noteId);
 
     let publishedPage;
 
@@ -92,6 +92,7 @@ export async function POST(
           isPublished: true,
           publishedAt: new Date(),
           slug,
+          shortId,
         },
         select: {
           slug: true,
@@ -103,6 +104,7 @@ export async function POST(
         data: {
           noteId,
           slug,
+          shortId,
           isPublished: true,
         },
         select: {
@@ -114,6 +116,7 @@ export async function POST(
     return NextResponse.json({
       data: {
         slug: publishedPage.slug,
+        shortId: shortId,
         publicUrl: `/public/${publishedPage.slug}`,
       },
     });

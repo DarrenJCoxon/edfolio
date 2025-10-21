@@ -114,6 +114,7 @@ model PublishedPage {
   noteId      String    @unique
   note        Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
   slug        String    @unique
+  shortId     String    @unique
   customSlug  Boolean   @default(false)
 
   // Publishing settings
@@ -131,6 +132,7 @@ model PublishedPage {
   lastViewed DateTime?
 
   @@index([slug])
+  @@index([shortId])
   @@index([noteId])
   @@index([publishedAt])
 }

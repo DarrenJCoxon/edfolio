@@ -10,15 +10,20 @@ import { RephrasePreview } from './RephrasePreview';
 import { SummarizePreview } from './SummarizePreview';
 import { GrammarFixPreview } from './GrammarFixPreview';
 import { PublishButton } from './PublishButton';
+import { OutlineDrawer } from './OutlineDrawer';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
-import { EditorViewProps, RephraseResponse, SummarizeResponse, FixGrammarResponse } from '@/types';
+import { EditorViewProps, RephraseResponse, SummarizeResponse, FixGrammarResponse, HeadingItem } from '@/types';
 import { cn } from '@/lib/utils';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFoliosStore } from '@/lib/stores/folios-store';
 import { toast } from 'sonner';
 import { calculateMenuPosition } from '@/lib/editor/menu-positioning';
 import { countWords } from '@/lib/editor/text-manipulation';
+import { extractHeadings, headingsHaveChanged } from '@/lib/editor/heading-extraction';
+import { detectActiveHeading, scrollToHeadingPosition } from '@/lib/editor/active-heading-detection';
+import { Editor } from '@tiptap/react';
 
 export function EditorView({ className, note }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
@@ -41,7 +46,20 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [isApplying, setIsApplying] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(() => {
+    // Load drawer state from localStorage on mount
+    try {
+      const saved = localStorage.getItem('edfolio-outline-drawer-open');
+      return saved === 'true';
+    } catch {
+      return false; // Default to closed
+    }
+  });
+  const [headings, setHeadings] = useState<HeadingItem[]>([]);
+  const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
+  const [scrollListenerActive, setScrollListenerActive] = useState(true);
   const editorInstanceRef = useRef<unknown | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
 
@@ -609,6 +627,86 @@ export function EditorView({ className, note }: EditorViewProps) {
     setPublishedSlug(null);
   }, []);
 
+  // Extract headings when editor content changes (debounced)
+  useEffect(() => {
+    if (!editorInstanceRef.current || !noteContent) return;
+
+    const extractTimer = setTimeout(() => {
+      const editor = editorInstanceRef.current as Editor;
+      const newHeadings = extractHeadings(editor);
+
+      // Only update if headings actually changed (prevent unnecessary re-renders)
+      setHeadings((prevHeadings) => {
+        if (headingsHaveChanged(newHeadings, prevHeadings)) {
+          return newHeadings;
+        }
+        return prevHeadings;
+      });
+    }, 300); // Debounce 300ms
+
+    return () => clearTimeout(extractTimer);
+  }, [noteContent]);
+
+  // Persist drawer state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('edfolio-outline-drawer-open', String(isDrawerOpen));
+    } catch (error) {
+      console.error('Failed to save drawer state:', error);
+    }
+  }, [isDrawerOpen]);
+
+  // Detect active heading on scroll (debounced)
+  useEffect(() => {
+    if (!scrollListenerActive || headings.length === 0) return;
+
+    const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollContainer) return;
+
+    let scrollTimer: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        const scrollTop = scrollContainer.scrollTop;
+        const newActiveId = detectActiveHeading(headings, scrollTop);
+
+        if (newActiveId !== activeHeadingId) {
+          setActiveHeadingId(newActiveId);
+        }
+      }, 100); // Debounce 100ms
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimer);
+    };
+  }, [headings, activeHeadingId, scrollListenerActive]);
+
+  // Handle heading click navigation
+  const handleHeadingClick = useCallback((headingId: string) => {
+    const heading = headings.find(h => h.id === headingId);
+    if (!heading) return;
+
+    const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollContainer) return;
+
+    // Scroll to heading position
+    scrollToHeadingPosition(heading.position, scrollContainer, 16);
+
+    // Set active heading immediately
+    setActiveHeadingId(headingId);
+
+    // Temporarily disable scroll listener to prevent interference
+    setScrollListenerActive(false);
+
+    // Re-enable after scroll completes
+    setTimeout(() => {
+      setScrollListenerActive(true);
+    }, 500);
+  }, [headings]);
+
   // Empty state - no note selected
   if (!activeNoteId) {
     return (
@@ -706,11 +804,31 @@ export function EditorView({ className, note }: EditorViewProps) {
             onUnpublishSuccess={handleUnpublishSuccess}
           />
           <SaveIndicator status={saveStatus} error={saveError} />
+
+          {/* Outline drawer toggle button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                className="outline-drawer-toggle p-[var(--spacing-xs)] hover:bg-[var(--muted)] rounded transition-colors"
+                aria-label="Toggle outline"
+              >
+                {isDrawerOpen ? (
+                  <PanelRightClose className="h-5 w-5 text-[var(--muted-foreground)]" />
+                ) : (
+                  <PanelRightOpen className="h-5 w-5 text-[var(--muted-foreground)]" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isDrawerOpen ? 'Close outline' : 'Open outline'}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
       {/* Editor content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="max-w-4xl mx-auto p-[var(--spacing-xl)]">
           <TipTapEditor
             content={noteContent}
@@ -761,6 +879,15 @@ export function EditorView({ className, note }: EditorViewProps) {
         onAccept={handleAcceptGrammarFix}
         onReject={handleRejectGrammarFix}
         isApplying={isApplying}
+      />
+
+      {/* Outline Drawer */}
+      <OutlineDrawer
+        isOpen={isDrawerOpen}
+        onToggle={() => setIsDrawerOpen(!isDrawerOpen)}
+        headings={headings}
+        activeHeadingId={activeHeadingId}
+        onHeadingClick={handleHeadingClick}
       />
     </div>
   );
