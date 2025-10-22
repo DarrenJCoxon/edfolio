@@ -86,7 +86,7 @@ export async function sendShareInvitation(
             year: 'numeric',
           })
         : undefined,
-      unsubscribeLink: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`,
+      unsubscribeLink: `${data.baseUrl}/unsubscribe`,
     };
 
     // Render HTML template
@@ -139,8 +139,8 @@ export async function sendPermissionChanged(
       newPermission: data.newPermission === 'edit' ? 'Can Edit' : 'Can View',
       isOldPermissionEdit: (data.oldPermission === 'edit').toString(),
       isNewPermissionEdit: (data.newPermission === 'edit').toString(),
-      pageLink: `${process.env.NEXT_PUBLIC_APP_URL}/public/${data.pageTitle}`,
-      unsubscribeLink: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`,
+      pageLink: `${data.baseUrl}/public/${data.slug}`,
+      unsubscribeLink: `${data.baseUrl}/unsubscribe`,
     };
 
     const html = await renderTemplate('permission-changed.html', templateData);
@@ -189,7 +189,7 @@ export async function sendAccessRevoked(
     const templateData = {
       pageTitle: data.pageTitle,
       revokedBy: data.revokedBy,
-      unsubscribeLink: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`,
+      unsubscribeLink: `${data.baseUrl}/unsubscribe`,
     };
 
     const html = await renderTemplate('access-revoked.html', templateData);

@@ -29,12 +29,17 @@ export async function PATCH(
       );
     }
 
+    // Auto-detect base URL from request headers
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const host = request.headers.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
+
     // Verify note ownership
     const note = await prisma.note.findUnique({
       where: { id: noteId },
       include: {
         folio: { select: { ownerId: true } },
-        published: { select: { id: true } },
+        published: { select: { id: true, slug: true } },
       },
     });
 
@@ -105,6 +110,8 @@ export async function PATCH(
         pageTitle: note.title,
         oldPermission: share.permission,
         newPermission: body.permission,
+        baseUrl: baseUrl,
+        slug: note.published!.slug,
       });
     }
 
@@ -114,6 +121,7 @@ export async function PATCH(
         toEmail: share.invitedEmail,
         pageTitle: note.title,
         revokedBy: session.user.name,
+        baseUrl: baseUrl,
       });
     }
 
@@ -148,6 +156,11 @@ export async function DELETE(
     }
 
     const { id: noteId, shareId } = await params;
+
+    // Auto-detect base URL from request headers
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const host = request.headers.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
 
     // Verify note ownership
     const note = await prisma.note.findUnique({
@@ -196,6 +209,7 @@ export async function DELETE(
       toEmail: share.invitedEmail,
       pageTitle: note.title,
       revokedBy: session.user.name,
+      baseUrl: baseUrl,
     });
 
     return NextResponse.json({

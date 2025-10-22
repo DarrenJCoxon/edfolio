@@ -454,6 +454,8 @@ export interface PermissionChangedEmailData {
   pageTitle: string;
   oldPermission: SharePermission;
   newPermission: SharePermission;
+  baseUrl: string;
+  slug: string;
 }
 
 /**
@@ -463,4 +465,5 @@ export interface AccessRevokedEmailData {
   toEmail: string;
   pageTitle: string;
   revokedBy: string;
+  baseUrl: string;
 }

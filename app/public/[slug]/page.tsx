@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
@@ -117,8 +118,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   // AUTHENTICATION GATE: Token-based shares require authentication
   // Public pages (no token) remain accessible without login
   if (token && !session) {
-    // Build callback URL with token preserved
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Auto-detect base URL from request headers
+    const headersList = await headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
+
     const callbackUrl = `${baseUrl}/public/${slug}?token=${token}`;
     const loginUrl = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
     redirect(loginUrl);

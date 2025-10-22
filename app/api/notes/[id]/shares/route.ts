@@ -187,8 +187,10 @@ export async function POST(
       },
     });
 
-    // Prepare URL components for email (prevents double-encoding)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Auto-detect base URL from request headers (works in all environments)
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const host = request.headers.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
     const accessLink = `${baseUrl}/public/${note.published.slug}?token=${accessToken}`;
 
     // Send invitation email with separate URL components
