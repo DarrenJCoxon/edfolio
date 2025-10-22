@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { LoginForm } from '@/components/auth/LoginForm';
 
 export const metadata: Metadata = {
-  title: 'Login | Kanvas',
+  title: 'Login | Edfolio',
   description: 'Sign in to your Edfolio account',
 };
 
