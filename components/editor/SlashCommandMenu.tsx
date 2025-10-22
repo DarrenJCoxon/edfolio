@@ -1,29 +1,94 @@
 /**
  * SlashCommandMenu
- * Floating menu component for slash commands
+ * Floating menu component for slash commands with Floating UI keyboard navigation
  */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import {
+  useFloating,
+  offset,
+  flip,
+  shift,
+  autoUpdate,
+  useListNavigation,
+  useInteractions,
+  FloatingFocusManager,
+  FloatingPortal,
+} from '@floating-ui/react';
 import type { SlashCommandItem } from '@/lib/editor/slash-commands/types';
 import { cn } from '@/lib/utils';
 
 interface SlashCommandMenuProps {
   items: SlashCommandItem[];
-  selectedIndex: number;
   onSelect: (item: SlashCommandItem) => void;
   query?: string;
+  getReferenceClientRect?: () => DOMRect | null;
 }
 
 export function SlashCommandMenu({
   items,
-  selectedIndex,
   onSelect,
   query = '',
+  getReferenceClientRect,
 }: SlashCommandMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [maxHeight, setMaxHeight] = useState<string>('60vh');
+  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+  const listRef = useRef<Array<HTMLElement | null>>([]);
+
+  // Determine optimal placement based on viewport space
+  const getOptimalPlacement = () => {
+    if (!getReferenceClientRect) return 'bottom-start';
+    const rect = getReferenceClientRect();
+    if (!rect) return 'bottom-start';
+
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const menuHeight = window.innerWidth < 640 ? viewportHeight * 0.6 : 384;
+
+    return rect.bottom > viewportHeight * 0.5 || spaceBelow < menuHeight
+      ? 'top-start'
+      : 'bottom-start';
+  };
+
+  const { refs, floatingStyles, context } = useFloating({
+    open: true,
+    placement: getOptimalPlacement() as any,
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      offset(8),
+      flip({
+        fallbackPlacements: ['top-start', 'bottom-start', 'top', 'bottom'],
+        padding: 8,
+      }),
+      shift({
+        padding: 8,
+      }),
+    ],
+  });
+
+  // Set virtual reference element for positioning
+  useEffect(() => {
+    if (getReferenceClientRect) {
+      refs.setPositionReference({
+        getBoundingClientRect: getReferenceClientRect,
+      });
+    }
+  }, [refs, getReferenceClientRect]);
+
+  // Setup list navigation
+  const listNavigation = useListNavigation(context, {
+    listRef,
+    activeIndex,
+    onNavigate: setActiveIndex,
+    loop: true,
+  });
+
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions([
+    listNavigation,
+  ]);
 
   // Handle mounting animation and calculate max height
   useEffect(() => {
@@ -53,15 +118,18 @@ export function SlashCommandMenu({
     };
   }, []);
 
-  // Scroll selected item into view
+  // Scroll active item into view
   useEffect(() => {
-    if (menuRef.current && items.length > 0) {
-      const selectedElement = menuRef.current.querySelector('[data-selected="true"]');
-      if (selectedElement) {
-        selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (activeIndex !== null && listRef.current[activeIndex]) {
+      const element = listRef.current[activeIndex];
+      if (element) {
+        element.scrollIntoView({
+          block: 'nearest',
+          behavior: 'smooth',
+        });
       }
     }
-  }, [selectedIndex, items]);
+  }, [activeIndex]);
 
   if (items.length === 0) {
     return null;
@@ -80,19 +148,22 @@ export function SlashCommandMenu({
   );
 
   return (
-    <div
-      ref={menuRef}
-      className={cn(
-        'slash-command-menu',
-        'z-50 overflow-y-auto',
-        'w-[calc(100vw-2rem)] max-w-xs sm:w-80',
-        'bg-[var(--card)] rounded-lg border border-[var(--border)] shadow-lg',
-        'p-[var(--spacing-xs)]',
-        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
-        'transition-all duration-200'
-      )}
-      style={{ maxHeight }}
-    >
+    <FloatingPortal>
+      <FloatingFocusManager context={context} modal={false}>
+        <div
+          ref={refs.setFloating}
+          style={{ ...floatingStyles, maxHeight }}
+          className={cn(
+            'slash-command-menu',
+            'z-50 overflow-y-auto',
+            'w-[calc(100vw-2rem)] max-w-xs sm:w-80',
+            'bg-[var(--card)] rounded-lg border border-[var(--border)] shadow-lg',
+            'p-[var(--spacing-xs)]',
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
+            'transition-all duration-200'
+          )}
+          {...getFloatingProps()}
+        >
       {Object.entries(groupedItems).map(([category, categoryItems]) => (
         <div key={category} className="p-[var(--spacing-xs)]">
           <div
@@ -106,21 +177,30 @@ export function SlashCommandMenu({
           </div>
           {categoryItems.map((item) => {
             const globalIndex = items.findIndex((i) => i.id === item.id);
-            const isSelected = globalIndex === selectedIndex;
+            const isActive = globalIndex === activeIndex;
             const Icon = item.icon;
 
             return (
               <button
                 key={item.id}
-                data-selected={isSelected}
-                onClick={() => onSelect(item)}
+                ref={(node) => {
+                  listRef.current[globalIndex] = node;
+                }}
+                role="menuitem"
+                tabIndex={isActive ? 0 : -1}
+                data-selected={isActive}
                 className={cn(
                   'w-full flex items-start',
                   'p-[var(--spacing-sm)]',
                   'rounded-md transition-colors duration-150',
                   'hover:bg-[var(--muted)]/10',
-                  isSelected && 'bg-[var(--accent)]/10 text-[var(--accent)]'
+                  isActive && 'bg-[var(--accent)]/10 text-[var(--accent)]'
                 )}
+                {...getItemProps({
+                  onClick() {
+                    onSelect(item);
+                  },
+                })}
               >
                 <Icon
                   className={cn(
@@ -157,6 +237,8 @@ export function SlashCommandMenu({
           No commands found for &ldquo;{query}&rdquo;
         </div>
       )}
-    </div>
+        </div>
+      </FloatingFocusManager>
+    </FloatingPortal>
   );
 }
