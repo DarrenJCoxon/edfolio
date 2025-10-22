@@ -1,11 +1,16 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { PublicPageLayout } from '@/components/public-page/PublicPageLayout';
+import { verifyAccessToken } from '@/lib/access-tokens';
 
 interface PageProps {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams: Promise<{
+    token?: string;
   }>;
 }
 
@@ -104,15 +109,36 @@ export async function generateMetadata({
 /**
  * Public page component (Server Component)
  */
-export default async function PublicPage({ params }: PageProps) {
+export default async function PublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { token } = await searchParams;
+  const session = await auth();
+
+  // Check if user is accessing with a share token
+  let sharePermission: 'read' | 'edit' | null = null;
+  let shareToken: string | undefined = undefined;
+
+  if (token) {
+    const verification = await verifyAccessToken(token);
+    if (verification.valid && verification.share) {
+      sharePermission = verification.share.permission;
+      shareToken = token;
+    }
+  }
+
   const publishedPage = await prisma.publishedPage.findUnique({
     where: { slug },
     include: {
       note: {
         select: {
+          id: true,
           title: true,
           content: true,
+          folio: {
+            select: {
+              ownerId: true,
+            },
+          },
         },
       },
     },
@@ -123,11 +149,19 @@ export default async function PublicPage({ params }: PageProps) {
     notFound();
   }
 
+  // Check if current user is the owner
+  const isOwner = session?.user?.id === publishedPage.note.folio.ownerId;
+
   return (
     <PublicPageLayout
       title={publishedPage.note.title}
       content={publishedPage.note.content}
       publishedAt={publishedPage.publishedAt}
+      noteId={publishedPage.note.id}
+      sharePermission={sharePermission}
+      shareToken={shareToken}
+      isOwner={isOwner}
+      isAuthenticated={!!session}
     />
   );
 }

@@ -1,0 +1,18 @@
+Hi there,
+
+{{senderName}} has shared a page with you:
+
+"{{pageTitle}}"
+
+You have {{permission}} access to this page.
+
+{{#if expiryDate}}
+This invitation expires on {{expiryDate}}.
+{{/if}}
+
+Open the page here:
+{{accessLink}}
+
+---
+Powered by Edfolio
+Unsubscribe: {{unsubscribeLink}}

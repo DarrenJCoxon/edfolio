@@ -1,6 +1,6 @@
 # CLAUDE.md - Non-Negotiable Development Standards
 
-**Version:** 1.2
+**Version:** 1.3
 **Last Updated:** October 21, 2025
 **Applies To:** All AI Agents (Scrum Master, Developer, QA)
 
@@ -140,14 +140,21 @@ startCommand = "npm run db:migrate && npm run start"
 ```
 
 ### 2.2 Tailwind Usage
-- **NEVER hardcode colors:** Use CSS variables via Tailwind's arbitrary values
+- **NEVER hardcode colors:** Use CSS variables via Tailwind's canonical syntax
   - ❌ `className="bg-white text-gray-900"`
-  - ✅ `className="bg-[var(--background)] text-[var(--foreground)]"`
-- **NEVER hardcode spacing values:** Use CSS variables
+  - ✅ `className="bg-background text-foreground"` (for theme colors)
+  - ✅ `className="bg-accent text-accent-foreground"` (for accent colors)
+- **NEVER hardcode spacing values:** Use CSS variables with parentheses syntax
   - ❌ `className="p-4 m-8"`
-  - ✅ `className="p-[var(--spacing-md)] m-[var(--spacing-lg)]"`
+  - ✅ `className="p-(--spacing-md) m-(--spacing-lg)"`
 - Use Tailwind's utility classes for layout, flexbox, grid
 - For complex styles, create reusable component classes
+
+**Note:** When using CSS variables in Tailwind:
+- Theme colors (foreground, background, muted, accent, etc.) → Use direct names: `text-foreground`, `bg-accent`
+- Custom spacing/sizing → Use parentheses: `p-(--spacing-md)`, `gap-(--spacing-sm)`
+- Border radius with named sizes → Use direct names: `rounded-md`, `rounded-lg`
+- Border with theme colors → Use direct names: `border-border`
 
 ### 2.3 Component Styling
 - Use `cn()` utility from `lib/utils.ts` for conditional classes
@@ -244,6 +251,42 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
   - `npx prisma migrate dev --name add-user-preferences`
   - `npx prisma migrate dev --name create-notes-table`
   - `npx prisma migrate dev --name add-folder-parent-relation`
+
+### 4.4 Local Database Startup (Prisma Postgres)
+**CRITICAL:** This project uses Prisma Postgres local development database. If background servers are killed, you MUST restart in this exact order:
+
+**Correct Startup Order:**
+```bash
+# 1. Start Prisma Postgres local database (ports 51213-51215)
+npx prisma dev
+
+# 2. Start Next.js dev server
+pnpm run dev
+
+# 3. Start Prisma Studio (optional)
+npx prisma studio
+```
+
+**Verify Database Connection:**
+```bash
+npx prisma migrate status
+# Should show: "Database schema is up to date!"
+```
+
+**CRITICAL - NEVER Use These Commands:**
+- ❌ `npx prisma db pull --force` - DESTROYS schema.prisma
+- ❌ `pnpm exec prisma` - Use `npx prisma` instead
+- ❌ Starting Next.js before `npx prisma dev` - Database won't be available
+
+**Why This Order Matters:**
+- `.env` contains `DATABASE_URL="prisma+postgres://localhost:51213/..."`
+- This protocol requires Prisma Postgres server running on ports 51213-51215
+- If `npx prisma dev` is not running, all database operations will fail
+
+**Troubleshooting:**
+- If Prisma Client shows errors, regenerate with `npx prisma generate`
+- If multiple duplicate servers are running, kill all: `pkill -9 node`
+- Then restart in correct order above
 
 ---
 
@@ -580,8 +623,8 @@ export async function GET() {
 
 ### ✅ ALWAYS DO THIS:
 ```typescript
-// CSS variables
-<div className="bg-[var(--background)] text-[var(--foreground)]">
+// CSS variables (canonical Tailwind syntax)
+<div className="bg-background text-foreground">
 
 // Proper typing
 function process(data: unknown) {
@@ -600,8 +643,8 @@ export async function GET() {
   }
 }
 
-// Tailwind classes
-<div className="text-[var(--accent)]">
+// Tailwind classes with canonical syntax
+<div className="text-accent p-(--spacing-md)">
 ```
 
 ---

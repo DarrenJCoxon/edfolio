@@ -274,3 +274,189 @@ export interface OutlineDrawerProps {
   activeHeadingId: string | null;
   onHeadingClick: (headingId: string) => void;
 }
+
+// Page Sharing & Collaboration types (Story 3.2)
+
+/**
+ * Permission level for page shares
+ */
+export type SharePermission = 'read' | 'edit';
+
+/**
+ * Status of a page share
+ */
+export type ShareStatus = 'active' | 'revoked';
+
+/**
+ * Page share record
+ */
+export interface PageShare {
+  id: string;
+  pageId: string;
+  invitedEmail: string;
+  invitedBy: string;
+  permission: SharePermission;
+  accessToken: string;
+  expiresAt: Date | null;
+  createdAt: Date;
+  lastAccessedAt: Date | null;
+  accessCount: number;
+  status: ShareStatus;
+}
+
+/**
+ * Request body for creating a share
+ */
+export interface CreateShareRequest {
+  invitedEmail: string;
+  permission: SharePermission;
+  expiresAt?: string;
+}
+
+/**
+ * Request body for updating a share
+ */
+export interface UpdateShareRequest {
+  permission?: SharePermission;
+  status?: ShareStatus;
+}
+
+/**
+ * Response after creating a share
+ */
+export interface CreateShareResponse {
+  data: {
+    id: string;
+    invitedEmail: string;
+    permission: SharePermission;
+    accessLink: string;
+    expiresAt: Date | null;
+  };
+}
+
+/**
+ * Response for share list
+ */
+export interface ShareListResponse {
+  data: PageShare[];
+}
+
+/**
+ * Props for ShareManagementModal component
+ */
+export interface ShareManagementModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  noteId: string;
+  noteTitle: string;
+  publicSlug: string;
+}
+
+/**
+ * Props for PermissionBadge component
+ */
+export interface PermissionBadgeProps {
+  permission: SharePermission;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+/**
+ * Props for CloneButton component
+ */
+export interface CloneButtonProps {
+  noteId: string;
+  noteTitle: string;
+  accessToken?: string;
+}
+
+/**
+ * Clone page request
+ */
+export interface ClonePageRequest {
+  accessToken?: string;
+}
+
+/**
+ * Clone page response
+ */
+export interface ClonePageResponse {
+  data: {
+    noteId: string;
+    title: string;
+    redirectUrl: string;
+  };
+}
+
+/**
+ * Access token validation request
+ */
+export interface ValidateAccessRequest {
+  accessToken: string;
+}
+
+/**
+ * Access token validation response
+ */
+export interface ValidateAccessResponse {
+  valid: boolean;
+  permission?: SharePermission;
+  pageData?: {
+    id: string;
+    title: string;
+    slug: string;
+    content: unknown;
+  };
+  error?: string;
+}
+
+/**
+ * Collaborator info for display
+ */
+export interface CollaboratorInfo {
+  userId: string;
+  email: string;
+  name: string | null;
+  role: 'owner' | 'editor';
+  lastEditedAt: Date | null;
+}
+
+/**
+ * Props for CollaboratorAvatar component
+ */
+export interface CollaboratorAvatarProps {
+  name: string | null;
+  email: string;
+  permission: SharePermission;
+  lastAccessed?: Date | null;
+}
+
+/**
+ * Email template data for share invitation
+ */
+export interface ShareInvitationEmailData {
+  toEmail: string;
+  fromUserName: string;
+  pageTitle: string;
+  accessLink: string;
+  permission: SharePermission;
+  expiryDate?: Date;
+}
+
+/**
+ * Email template data for permission change
+ */
+export interface PermissionChangedEmailData {
+  toEmail: string;
+  pageTitle: string;
+  oldPermission: SharePermission;
+  newPermission: SharePermission;
+}
+
+/**
+ * Email template data for access revocation
+ */
+export interface AccessRevokedEmailData {
+  toEmail: string;
+  pageTitle: string;
+  revokedBy: string;
+}

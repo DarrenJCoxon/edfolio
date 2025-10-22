@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Globe, Loader2 } from 'lucide-react';
+import { Globe, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UnpublishConfirmDialog } from './UnpublishConfirmDialog';
+import { ShareManagementModal } from '@/components/publish/ShareManagementModal';
 import type { PublishButtonProps } from '@/types';
 
 /**
@@ -22,6 +23,8 @@ export function PublishButton({
 }: PublishButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
 
   const handlePublish = async () => {
     setIsLoading(true);
@@ -89,10 +92,23 @@ export function PublishButton({
     }
   };
 
+  // Fetch note title when modal opens
+  const handleShareClick = async () => {
+    try {
+      const response = await fetch(`/api/notes/${noteId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNoteTitle(data.data.title || 'Untitled');
+      }
+    } catch (error) {
+      console.error('Failed to fetch note title:', error);
+      setNoteTitle('Untitled');
+    }
+    setShowShareModal(true);
+  };
+
   const handleClick = () => {
-    if (isPublished) {
-      setShowUnpublishDialog(true);
-    } else {
+    if (!isPublished) {
       handlePublish();
     }
   };
@@ -103,28 +119,47 @@ export function PublishButton({
 
   return (
     <>
-      <Button
-        variant={isPublished ? 'outline' : 'default'}
-        size="sm"
-        onClick={handleClick}
-        disabled={isLoading}
-        aria-label={
-          isPublished ? 'Unpublish page' : 'Publish page'
-        }
-      >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        ) : (
-          <Globe className="h-4 w-4 mr-2" />
-        )}
-        {isPublished ? 'Unpublish' : 'Publish'}
-      </Button>
+      {isPublished ? (
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleShareClick}
+          disabled={isLoading}
+          aria-label="Share page"
+        >
+          <Share2 className="h-4 w-4 mr-2" />
+          Share
+        </Button>
+      ) : (
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleClick}
+          disabled={isLoading}
+          aria-label="Publish page"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Globe className="h-4 w-4 mr-2" />
+          )}
+          Publish
+        </Button>
+      )}
 
       <UnpublishConfirmDialog
         isOpen={showUnpublishDialog}
         onConfirm={handleUnpublish}
         onCancel={() => setShowUnpublishDialog(false)}
         publicUrl={publicUrl}
+      />
+
+      <ShareManagementModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        noteId={noteId}
+        noteTitle={noteTitle}
+        publicSlug={publishedSlug || ''}
       />
     </>
   );
