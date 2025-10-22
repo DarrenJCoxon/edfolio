@@ -6,12 +6,12 @@ import { sendShareInvitation } from '@/lib/email-service';
 import { CreateShareRequest } from '@/types';
 
 /**
- * GET /api/notes/[noteId]/shares
+ * GET /api/notes/[id]/shares
  * List all shares for a note (owner only)
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -19,7 +19,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const { id: noteId } = await params;
 
     // Verify note ownership
     const note = await prisma.note.findUnique({
@@ -72,12 +72,12 @@ export async function GET(
 }
 
 /**
- * POST /api/notes/[noteId]/shares
+ * POST /api/notes/[id]/shares
  * Create a new share invitation
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -85,7 +85,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const { id: noteId } = await params;
     const body: CreateShareRequest = await request.json();
 
     // Validate request body

@@ -5,12 +5,12 @@ import { verifyAccessToken } from '@/lib/access-tokens';
 import { ClonePageRequest } from '@/types';
 
 /**
- * POST /api/notes/[noteId]/clone
+ * POST /api/notes/[id]/clone
  * Clone a note to user's vault (requires edit permission via share or ownership)
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -20,7 +20,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const { id: noteId } = await params;
     const body: ClonePageRequest = await request.json();
 
     // Check if user has permission to clone

@@ -5,12 +5,12 @@ import { sendPermissionChanged, sendAccessRevoked } from '@/lib/email-service';
 import { UpdateShareRequest } from '@/types';
 
 /**
- * PATCH /api/notes/[noteId]/shares/[shareId]
+ * PATCH /api/notes/[id]/shares/[shareId]
  * Update share permission or status
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ noteId: string; shareId: string }> }
+  { params }: { params: Promise<{ id: string; shareId: string }> }
 ) {
   try {
     const session = await auth();
@@ -18,7 +18,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { noteId, shareId } = await params;
+    const { id: noteId, shareId } = await params;
     const body: UpdateShareRequest = await request.json();
 
     // Validate at least one field to update
@@ -134,12 +134,12 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/notes/[noteId]/shares/[shareId]
+ * DELETE /api/notes/[id]/shares/[shareId]
  * Revoke a share (soft delete by setting status to 'revoked')
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ noteId: string; shareId: string }> }
+  { params }: { params: Promise<{ id: string; shareId: string }> }
 ) {
   try {
     const session = await auth();
@@ -147,7 +147,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { noteId, shareId } = await params;
+    const { id: noteId, shareId } = await params;
 
     // Verify note ownership
     const note = await prisma.note.findUnique({
