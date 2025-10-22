@@ -32,7 +32,30 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: folios });
+    // Check if user has any shared pages
+    const sharedPageCount = await prisma.pageCollaborator.count({
+      where: {
+        userId: session.user.id,
+      },
+    });
+
+    // Prepend virtual "Shared with Me" folio if user has shares
+    const allFolios = sharedPageCount > 0
+      ? [
+          {
+            id: '__shared__',
+            name: 'Shared with Me',
+            ownerId: session.user.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isSystem: true,
+            shareCount: sharedPageCount,
+          },
+          ...folios,
+        ]
+      : folios;
+
+    return NextResponse.json({ data: allFolios });
   } catch (error) {
     console.error('Error in GET /api/folios:', error);
     return NextResponse.json(

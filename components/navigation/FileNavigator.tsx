@@ -17,6 +17,7 @@ import { CreateItemDialog } from './CreateItemDialog';
 import { RenameDialog } from './RenameDialog';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FolioTree } from './FolioTree';
+import { SharedPagesList } from './SharedPagesList';
 
 export function FileNavigator({ className }: FileNavigatorProps) {
   const {
@@ -112,6 +113,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
   const activeFolio = folios.find((f) => f.id === activeFolioId);
   const hasNoFiles = folders.length === 0 && notes.length === 0;
+  const isSharedFolio = activeFolioId === '__shared__';
 
   if (sidebarCollapsed) {
     return (
@@ -153,26 +155,30 @@ export function FileNavigator({ className }: FileNavigatorProps) {
             {activeFolio?.name || 'Files'}
           </h2>
           <div className="flex gap-[var(--spacing-xs)]">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => openCreateDialog('folder', selectedFolderId || undefined)}
-              aria-label="New folder"
-              className="h-8 w-8"
-              title="New folder"
-            >
-              <FolderPlus className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => openCreateDialog('note', selectedFolderId || undefined)}
-              aria-label="New note"
-              className="h-8 w-8"
-              title="New note"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            {!isSharedFolio && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => openCreateDialog('folder', selectedFolderId || undefined)}
+                  aria-label="New folder"
+                  className="h-8 w-8"
+                  title="New folder"
+                >
+                  <FolderPlus className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => openCreateDialog('note', selectedFolderId || undefined)}
+                  aria-label="New note"
+                  className="h-8 w-8"
+                  title="New note"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -187,7 +193,9 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
         <ScrollArea className="flex-1">
           <div className="p-[var(--spacing-sm)]" role="tree">
-            {isLoading ? (
+            {isSharedFolio ? (
+              <SharedPagesList />
+            ) : isLoading ? (
               <p className="text-sm text-[var(--muted-foreground)] p-[var(--spacing-md)]">
                 Loading...
               </p>
