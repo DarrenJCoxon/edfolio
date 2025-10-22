@@ -4,6 +4,7 @@ import "./globals.css";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 import { ThemeProvider } from "@/lib/context/ThemeContext";
+import { FontProvider } from "@/lib/context/FontContext";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -33,7 +34,9 @@ export default function RootLayout({
       >
         <SessionProvider>
           <ThemeProvider>
-            {children}
+            <FontProvider>
+              {children}
+            </FontProvider>
           </ThemeProvider>
         </SessionProvider>
         <Toaster richColors position="top-right" />
