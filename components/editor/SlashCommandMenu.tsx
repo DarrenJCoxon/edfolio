@@ -23,11 +23,34 @@ export function SlashCommandMenu({
 }: SlashCommandMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [maxHeight, setMaxHeight] = useState<string>('60vh');
 
-  // Handle mounting animation
+  // Handle mounting animation and calculate max height
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+
+    // Calculate available space for the menu
+    const calculateMaxHeight = () => {
+      const viewportHeight = window.innerHeight;
+      const isMobile = window.innerWidth < 640;
+
+      // Reserve space for padding and positioning
+      const reservedSpace = isMobile ? 100 : 120;
+      const calculatedHeight = Math.min(
+        isMobile ? viewportHeight * 0.6 : 384, // 60vh on mobile, 384px (24rem) on desktop
+        viewportHeight - reservedSpace
+      );
+
+      setMaxHeight(`${calculatedHeight}px`);
+    };
+
+    calculateMaxHeight();
+    window.addEventListener('resize', calculateMaxHeight);
+
+    return () => {
+      setMounted(false);
+      window.removeEventListener('resize', calculateMaxHeight);
+    };
   }, []);
 
   // Scroll selected item into view
@@ -61,14 +84,14 @@ export function SlashCommandMenu({
       ref={menuRef}
       className={cn(
         'slash-command-menu',
-        'fixed z-50 overflow-y-auto',
+        'z-50 overflow-y-auto',
         'w-[calc(100vw-2rem)] max-w-xs sm:w-80',
-        'max-h-[60vh] sm:max-h-96',
         'bg-[var(--card)] rounded-lg border border-[var(--border)] shadow-lg',
         'p-[var(--spacing-xs)]',
         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
         'transition-all duration-200'
       )}
+      style={{ maxHeight }}
     >
       {Object.entries(groupedItems).map(([category, categoryItems]) => (
         <div key={category} className="p-[var(--spacing-xs)]">
