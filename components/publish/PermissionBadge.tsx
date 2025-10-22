@@ -31,7 +31,7 @@ export function PermissionBadge({
         'inline-flex items-center gap-1.5 font-medium rounded',
         sizeClasses[size],
         isEdit
-          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+          ? 'bg-accent/10 text-accent border border-accent/20'
           : 'bg-muted text-muted-foreground'
       )}
     >
