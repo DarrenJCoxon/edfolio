@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronsUpDown, Plus } from 'lucide-react';
+import { ChevronsUpDown, Plus, Users } from 'lucide-react';
 import { CreateItemDialog } from './CreateItemDialog';
 import { cn } from '@/lib/utils';
 
@@ -82,7 +82,15 @@ export function FolioSwitcher() {
                   activeFolio?.id === folio.id && 'bg-[var(--accent)]/10'
                 )}
               >
+                {folio.id === '__shared__' && (
+                  <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                )}
                 <span className="truncate">{folio.name}</span>
+                {folio.id === '__shared__' && folio.shareCount && (
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {folio.shareCount}
+                  </span>
+                )}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />

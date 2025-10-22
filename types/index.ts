@@ -14,6 +14,8 @@ export interface Folio {
   notes: Note[];
   createdAt: Date;
   updatedAt: Date;
+  isSystem?: boolean;
+  shareCount?: number;
 }
 
 export interface Folder {
@@ -437,7 +439,9 @@ export interface ShareInvitationEmailData {
   toEmail: string;
   fromUserName: string;
   pageTitle: string;
-  accessLink: string;
+  baseUrl: string;
+  slug: string;
+  token: string;
   permission: SharePermission;
   expiryDate?: Date;
 }

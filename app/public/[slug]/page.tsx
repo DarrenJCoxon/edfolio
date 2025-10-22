@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { PublicPageLayout } from '@/components/public-page/PublicPageLayout';
@@ -113,6 +113,16 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const { token } = await searchParams;
   const session = await auth();
+
+  // AUTHENTICATION GATE: Token-based shares require authentication
+  // Public pages (no token) remain accessible without login
+  if (token && !session) {
+    // Build callback URL with token preserved
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const callbackUrl = `${baseUrl}/public/${slug}?token=${token}`;
+    const loginUrl = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    redirect(loginUrl);
+  }
 
   // Check if user is accessing with a share token
   let sharePermission: 'read' | 'edit' | null = null;

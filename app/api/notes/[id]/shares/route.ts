@@ -187,16 +187,18 @@ export async function POST(
       },
     });
 
-    // Generate access link
+    // Prepare URL components for email (prevents double-encoding)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const accessLink = `${baseUrl}/public/${note.published.slug}?token=${accessToken}`;
 
-    // Send invitation email
+    // Send invitation email with separate URL components
     await sendShareInvitation({
       toEmail: body.invitedEmail,
       fromUserName: session.user.name,
       pageTitle: note.title,
-      accessLink: accessLink,
+      baseUrl: baseUrl,
+      slug: note.published.slug,
+      token: accessToken,
       permission: body.permission,
       expiryDate: expiresAt || undefined,
     });

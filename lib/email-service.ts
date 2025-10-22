@@ -70,11 +70,13 @@ export async function sendShareInvitation(
   try {
     const subject = `${data.fromUserName} shared "${data.pageTitle}" with you`;
 
-    // Prepare template data
+    // Prepare template data - pass URL components separately to prevent double-encoding
     const templateData = {
       senderName: data.fromUserName,
       pageTitle: data.pageTitle,
-      accessLink: data.accessLink,
+      baseUrl: data.baseUrl,
+      slug: data.slug,
+      token: data.token,
       permission: data.permission === 'edit' ? 'Can Edit' : 'Can View',
       isEditPermission: (data.permission === 'edit').toString(),
       expiryDate: data.expiryDate

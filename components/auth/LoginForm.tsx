@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,8 +21,12 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get callbackUrl from query params (for token-based share redirects)
+  const callbackUrl = searchParams.get('callbackUrl');
 
   const {
     register,
@@ -49,8 +53,9 @@ export function LoginForm() {
         return;
       }
 
-      // Successful login - redirect to main app
-      router.push('/');
+      // Successful login - redirect to callback URL or main app
+      const redirectUrl = callbackUrl || '/';
+      router.push(redirectUrl);
       router.refresh();
     } catch {
       setError('An unexpected error occurred');

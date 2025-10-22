@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { verifyAccessToken } from '@/lib/access-tokens';
 import { ValidateAccessRequest } from '@/types';
 
 /**
  * POST /api/public/[slug]/access
- * Validate access token for a published page
+ * Validate access token for a published page and create PageCollaborator on first access
+ * REQUIRES AUTHENTICATION
  */
 export async function POST(
   request: NextRequest,
@@ -13,6 +15,16 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
+    const session = await auth();
+
+    // Authentication required for token-based access
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body: ValidateAccessRequest = await request.json();
 
     if (!body.accessToken) {
@@ -62,6 +74,32 @@ export async function POST(
         error: 'Access token does not match this page',
       });
     }
+
+    // Create PageCollaborator record on first access (upsert to handle duplicates)
+    await prisma.pageCollaborator.upsert({
+      where: {
+        pageId_userId: {
+          pageId: publishedPage.id,
+          userId: session.user.id,
+        },
+      },
+      create: {
+        pageId: publishedPage.id,
+        userId: session.user.id,
+        shareId: verification.share.id,
+        role: verification.share.permission === 'edit' ? 'editor' : 'viewer',
+      },
+      update: {
+        // Update share reference if token changed
+        shareId: verification.share.id,
+      },
+    });
+
+    // Update last accessed time on share
+    await prisma.pageShare.update({
+      where: { id: verification.share.id },
+      data: { lastAccessedAt: new Date() },
+    });
 
     // Return successful validation with page data
     return NextResponse.json({
