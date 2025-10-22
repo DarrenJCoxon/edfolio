@@ -15,6 +15,7 @@ import {
   useInteractions,
   FloatingFocusManager,
   FloatingPortal,
+  type Placement,
 } from '@floating-ui/react';
 import type { SlashCommandItem } from '@/lib/editor/slash-commands/types';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,7 @@ export function SlashCommandMenu({
   const listRef = useRef<Array<HTMLElement | null>>([]);
 
   // Determine optimal placement based on viewport space
-  const getOptimalPlacement = () => {
+  const getOptimalPlacement = (): Placement => {
     if (!getReferenceClientRect) return 'bottom-start';
     const rect = getReferenceClientRect();
     if (!rect) return 'bottom-start';
@@ -54,7 +55,7 @@ export function SlashCommandMenu({
 
   const { refs, floatingStyles, context } = useFloating({
     open: true,
-    placement: getOptimalPlacement() as any,
+    placement: getOptimalPlacement(),
     strategy: 'fixed',
     whileElementsMounted: autoUpdate,
     middleware: [
@@ -73,7 +74,23 @@ export function SlashCommandMenu({
   useEffect(() => {
     if (getReferenceClientRect) {
       refs.setPositionReference({
-        getBoundingClientRect: getReferenceClientRect,
+        getBoundingClientRect: () => {
+          const rect = getReferenceClientRect();
+          if (!rect) {
+            // Fallback to a default rect if null
+            return {
+              x: 0,
+              y: 0,
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              width: 0,
+              height: 0,
+            };
+          }
+          return rect;
+        },
       });
     }
   }, [refs, getReferenceClientRect]);
@@ -86,7 +103,7 @@ export function SlashCommandMenu({
     loop: true,
   });
 
-  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions([
+  const { getFloatingProps, getItemProps } = useInteractions([
     listNavigation,
   ]);
 
