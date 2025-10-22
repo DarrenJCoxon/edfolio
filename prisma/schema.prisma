@@ -52,6 +52,8 @@ model User {
   accounts           Account[]
   folios             Folio[]
   sessions           Session[]
+  invitedShares      PageShare[] @relation("Inviter")
+  collaborations     PageCollaborator[]
 
   @@index([email])
 }
@@ -132,8 +134,71 @@ model PublishedPage {
   viewCount  Int       @default(0)
   lastViewed DateTime?
 
+  // Sharing and collaboration (Story 3.2)
+  shares         PageShare[]
+  collaborators  PageCollaborator[]
+
   @@index([slug])
   @@index([shortId])
   @@index([noteId])
   @@index([publishedAt])
+}
+
+enum SharePermission {
+  read
+  edit
+}
+
+enum ShareStatus {
+  active
+  revoked
+}
+
+model PageShare {
+  id              String          @id @default(cuid())
+  pageId          String
+  page            PublishedPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  // Invitation details
+  invitedEmail    String
+  invitedBy       String
+  inviter         User            @relation("Inviter", fields: [invitedBy], references: [id])
+  permission      SharePermission @default(read)
+
+  // Access control
+  accessToken     String          @unique @db.Text
+  expiresAt       DateTime?
+  status          ShareStatus     @default(active)
+
+  // Analytics
+  createdAt       DateTime        @default(now())
+  lastAccessedAt  DateTime?
+  accessCount     Int             @default(0)
+
+  // Relations
+  collaborators   PageCollaborator[]
+
+  @@index([pageId])
+  @@index([accessToken])
+  @@index([invitedEmail])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model PageCollaborator {
+  id            String        @id @default(cuid())
+  pageId        String
+  page          PublishedPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shareId       String?
+  share         PageShare?    @relation(fields: [shareId], references: [id])
+  role          String        // 'owner' | 'editor'
+  lastEditedAt  DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@unique([pageId, userId])
+  @@index([pageId])
+  @@index([userId])
+  @@index([shareId])
 }
