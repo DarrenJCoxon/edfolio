@@ -1,5 +1,6 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { Resend } from 'resend';
 import {
   ShareInvitationEmailData,
   PermissionChangedEmailData,
@@ -8,11 +9,14 @@ import {
 
 /**
  * Email service configuration
- * Uses environment variables to determine which service to use
+ * Uses Resend (EU region: eu-west-1) for GDPR compliance
  */
-const EMAIL_SERVICE = process.env.EMAIL_SERVICE || 'console'; // 'aws-ses' | 'sendgrid' | 'console'
 const EMAIL_FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS || 'noreply@edfolio.app';
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Edfolio';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+// Initialize Resend client
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 /**
  * Load and render an email template
@@ -86,15 +90,31 @@ export async function sendShareInvitation(
     // Render HTML template
     const html = await renderTemplate('share-invitation.html', templateData);
 
-    // Send via configured service
-    if (EMAIL_SERVICE === 'console' || process.env.NODE_ENV === 'development') {
+    // Development mode: log to console
+    if (process.env.NODE_ENV === 'development' && !resend) {
       sendViaConsole(data.toEmail, subject, html);
       return true;
     }
 
-    // TODO: Implement AWS SES or SendGrid sending
-    // For now, fallback to console logging
-    sendViaConsole(data.toEmail, subject, html);
+    // Production: Send via Resend
+    if (!resend) {
+      console.error('Resend client not initialized. Check RESEND_API_KEY environment variable.');
+      return false;
+    }
+
+    const response = await resend.emails.send({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
+      to: [data.toEmail],
+      subject,
+      html,
+    });
+
+    if (response.error) {
+      console.error('Resend API error:', response.error);
+      return false;
+    }
+
+    console.log(`✅ Share invitation email sent to ${data.toEmail} (ID: ${response.data?.id})`);
     return true;
   } catch (error) {
     console.error('Error sending share invitation email:', error);
@@ -123,12 +143,31 @@ export async function sendPermissionChanged(
 
     const html = await renderTemplate('permission-changed.html', templateData);
 
-    if (EMAIL_SERVICE === 'console' || process.env.NODE_ENV === 'development') {
+    // Development mode: log to console
+    if (process.env.NODE_ENV === 'development' && !resend) {
       sendViaConsole(data.toEmail, subject, html);
       return true;
     }
 
-    sendViaConsole(data.toEmail, subject, html);
+    // Production: Send via Resend
+    if (!resend) {
+      console.error('Resend client not initialized. Check RESEND_API_KEY environment variable.');
+      return false;
+    }
+
+    const response = await resend.emails.send({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
+      to: [data.toEmail],
+      subject,
+      html,
+    });
+
+    if (response.error) {
+      console.error('Resend API error:', response.error);
+      return false;
+    }
+
+    console.log(`✅ Permission changed email sent to ${data.toEmail} (ID: ${response.data?.id})`);
     return true;
   } catch (error) {
     console.error('Error sending permission changed email:', error);
@@ -153,12 +192,31 @@ export async function sendAccessRevoked(
 
     const html = await renderTemplate('access-revoked.html', templateData);
 
-    if (EMAIL_SERVICE === 'console' || process.env.NODE_ENV === 'development') {
+    // Development mode: log to console
+    if (process.env.NODE_ENV === 'development' && !resend) {
       sendViaConsole(data.toEmail, subject, html);
       return true;
     }
 
-    sendViaConsole(data.toEmail, subject, html);
+    // Production: Send via Resend
+    if (!resend) {
+      console.error('Resend client not initialized. Check RESEND_API_KEY environment variable.');
+      return false;
+    }
+
+    const response = await resend.emails.send({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
+      to: [data.toEmail],
+      subject,
+      html,
+    });
+
+    if (response.error) {
+      console.error('Resend API error:', response.error);
+      return false;
+    }
+
+    console.log(`✅ Access revoked email sent to ${data.toEmail} (ID: ${response.data?.id})`);
     return true;
   } catch (error) {
     console.error('Error sending access revoked email:', error);
@@ -189,12 +247,31 @@ export async function sendExpiryNotification(
       </html>
     `;
 
-    if (EMAIL_SERVICE === 'console' || process.env.NODE_ENV === 'development') {
+    // Development mode: log to console
+    if (process.env.NODE_ENV === 'development' && !resend) {
       sendViaConsole(toEmail, subject, html);
       return true;
     }
 
-    sendViaConsole(toEmail, subject, html);
+    // Production: Send via Resend
+    if (!resend) {
+      console.error('Resend client not initialized. Check RESEND_API_KEY environment variable.');
+      return false;
+    }
+
+    const response = await resend.emails.send({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
+      to: [toEmail],
+      subject,
+      html,
+    });
+
+    if (response.error) {
+      console.error('Resend API error:', response.error);
+      return false;
+    }
+
+    console.log(`✅ Expiry notification email sent to ${toEmail} (ID: ${response.data?.id})`);
     return true;
   } catch (error) {
     console.error('Error sending expiry notification:', error);
