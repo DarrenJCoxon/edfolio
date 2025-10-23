@@ -72,10 +72,18 @@ export function useFolioData() {
     fetchFolioData();
   }, [activeFolioId]);
 
-  // Restore last active note on initial load
+  // Restore last active note on initial load ONLY if no note is already active
   useEffect(() => {
     const restoreLastActiveNote = async () => {
       try {
+        // Get current state to check if a note was already set
+        const currentActiveNoteId = useFoliosStore.getState().activeNoteId;
+
+        // Skip restoration if a note is already active (e.g., user clicked before restoration)
+        if (currentActiveNoteId) {
+          return;
+        }
+
         const response = await fetch('/api/user/last-active-note');
         if (!response.ok) return;
 
