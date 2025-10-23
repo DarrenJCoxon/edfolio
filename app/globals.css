@@ -564,6 +564,97 @@ html, body {
   opacity: 0.1;
 }
 
+/* Notion-style Table Controls */
+.table-wrapper {
+  position: relative;
+  margin: var(--spacing-md) 0;
+}
+
+.tiptap-editor .ProseMirror tr {
+  position: relative;
+}
+
+.tiptap-editor .ProseMirror th,
+.tiptap-editor .ProseMirror td {
+  position: relative;
+}
+
+/* Row add button */
+.table-row-add {
+  display: none;
+  position: absolute;
+  right: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.table-row-add:hover {
+  transform: translateY(-50%) scale(1.1);
+  background: var(--accent);
+}
+
+.table-row-add svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+/* Column add button */
+.table-col-add {
+  display: none;
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.table-col-add:hover {
+  transform: translateY(-50%) scale(1.1);
+  background: var(--accent);
+}
+
+.table-col-add svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+/* Show buttons on hover */
+.tiptap-editor .ProseMirror tr:hover .table-row-add {
+  display: flex;
+}
+
+.tiptap-editor .ProseMirror th:hover .table-col-add,
+.tiptap-editor .ProseMirror td:hover .table-col-add {
+  display: flex;
+}
+
 /* Image Styles */
 .tiptap-editor .ProseMirror img {
   max-width: 100%;
