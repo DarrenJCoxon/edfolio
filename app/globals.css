@@ -989,10 +989,10 @@ html, body {
   margin: var(--spacing-lg) 0;
 }
 
-/* Callout blocks for public pages */
+/* Callout blocks for public pages - Force light mode colors */
 .public-content .callout-block {
-  background-color: var(--callout-bg);
-  border-left: 4px solid var(--callout-border);
+  background-color: #EBF5FF;
+  border-left: 4px solid #3B82F6;
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   margin: var(--spacing-md) 0;
