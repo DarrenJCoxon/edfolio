@@ -735,8 +735,8 @@ export function EditorView({ className, note }: EditorViewProps) {
     const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
     if (!scrollContainer) return;
 
-    // Scroll to heading position
-    scrollToHeadingPosition(heading.position, scrollContainer, 16);
+    // Scroll to heading position (uses default 80px offset for proper top alignment)
+    scrollToHeadingPosition(heading.position, scrollContainer);
 
     // Set active heading immediately
     setActiveHeadingId(headingId);
