@@ -63,10 +63,24 @@ export const SlashCommands = Extension.create({
           });
         },
         allow: ({ state, range }: AllowProps) => {
-          const stateObj = state as { doc: { resolve: (pos: number) => { depth: number; parent: { type: { name: string } } } } };
+          const stateObj = state as {
+            doc: {
+              resolve: (pos: number) => { depth: number; parent: { type: { name: string } } };
+              textBetween: (from: number, to: number) => string;
+            }
+          };
           const $from = stateObj.doc.resolve(range.from);
           const isRootDepth = $from.depth === 1;
           const isParagraph = $from.parent.type.name === 'paragraph';
+
+          // Check if there's a space immediately after the slash
+          // If range.from is the slash position, range.to is the current cursor position
+          const textAfterSlash = stateObj.doc.textBetween(range.from + 1, range.to);
+
+          // Don't trigger if the first character after slash is a space
+          if (textAfterSlash.startsWith(' ')) {
+            return false;
+          }
 
           return isRootDepth || isParagraph;
         },
