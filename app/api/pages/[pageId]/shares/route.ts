@@ -202,7 +202,7 @@ export async function POST(
     return NextResponse.json({
       data: {
         share,
-        accessLink: `${baseUrl}/public/${publishedPage.slug}?token=${accessToken}`,
+        accessLink: `${baseUrl}/accept-share?token=${accessToken}`,
       },
       message: 'Share created and invitation sent',
     }, { status: 201 });
