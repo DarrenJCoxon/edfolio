@@ -15,6 +15,7 @@ interface TabBarProps {
   onTabClose: (noteId: string) => void;
   onShowOverflowMenu: () => void;
   hasOverflow: boolean;
+  rightControls?: React.ReactNode;
 }
 
 interface TabItemProps {
@@ -33,14 +34,14 @@ function TabItem({
   const truncatedTitle = title.length > 20 ? title.slice(0, 20) + '...' : title;
 
   return (
-    <button
-      onClick={onTabClick}
+    <div
       className={cn(
         'tab-item group flex items-center',
         'gap-[var(--spacing-xs)]',
         'px-[var(--tab-padding-x)] py-[var(--tab-padding-y)]',
         'rounded-t-md transition-all duration-150',
         'border-b-2',
+        'cursor-pointer',
         isActive
           ? [
               'bg-[var(--tab-bg-active)]',
@@ -56,10 +57,20 @@ function TabItem({
               'hover:text-[var(--foreground)]',
             ]
       )}
+      role="tab"
       aria-label={`Switch to ${title}`}
-      aria-current={isActive ? 'page' : undefined}
+      aria-selected={isActive}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onTabClick();
+        }
+      }}
     >
-      <span className="text-sm whitespace-nowrap">{truncatedTitle}</span>
+      <span className="text-sm whitespace-nowrap" onClick={onTabClick}>
+        {truncatedTitle}
+      </span>
 
       <button
         onClick={onTabClose}
@@ -73,7 +84,7 @@ function TabItem({
       >
         <X className="h-3 w-3" />
       </button>
-    </button>
+    </div>
   );
 }
 
@@ -84,6 +95,7 @@ export function TabBar({
   onTabClose,
   onShowOverflowMenu,
   hasOverflow,
+  rightControls,
 }: TabBarProps) {
   return (
     <div
@@ -111,19 +123,23 @@ export function TabBar({
         ))}
       </div>
 
-      {hasOverflow && (
-        <button
-          onClick={onShowOverflowMenu}
-          className={cn(
-            'flex-shrink-0 ml-auto',
-            'p-[var(--spacing-xs)]',
-            'hover:bg-[var(--muted)] rounded transition-colors'
-          )}
-          aria-label="Show all tabs"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-      )}
+      {/* Right side controls */}
+      <div className="flex items-center gap-[var(--spacing-sm)] flex-shrink-0 ml-auto">
+        {rightControls}
+
+        {hasOverflow && (
+          <button
+            onClick={onShowOverflowMenu}
+            className={cn(
+              'p-[var(--spacing-xs)]',
+              'hover:bg-[var(--muted)] rounded transition-colors'
+            )}
+            aria-label="Show all tabs"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
