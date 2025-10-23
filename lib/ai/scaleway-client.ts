@@ -9,6 +9,7 @@
  * - Request timeout handling
  * - Comprehensive error handling
  * - Type-safe request/response interfaces
+ * - Graceful handling when API keys are missing
  */
 
 import {
@@ -17,6 +18,7 @@ import {
   ScalewayError,
   ScalewayClientConfig,
 } from './types';
+import { config } from '@/lib/config';
 
 /**
  * Default configuration values
@@ -196,18 +198,30 @@ class ScalewayClient {
 /**
  * Singleton instance of Scaleway client
  * Similar pattern to Prisma client singleton
+ *
+ * Only instantiates if AI features are enabled (API keys present)
+ * This allows the app to run without Scaleway credentials
  */
 const globalForScaleway = global as unknown as {
   scalewayClient: ScalewayClient | undefined;
 };
 
-export const scalewayClient =
-  globalForScaleway.scalewayClient ||
-  new ScalewayClient();
+let scalewayClient: ScalewayClient | undefined;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForScaleway.scalewayClient = scalewayClient;
+try {
+  if (config.features.ai.enabled) {
+    scalewayClient = globalForScaleway.scalewayClient || new ScalewayClient();
+
+    if (process.env.NODE_ENV !== 'production') {
+      globalForScaleway.scalewayClient = scalewayClient;
+    }
+  }
+} catch (error) {
+  // If client initialization fails, AI features will be disabled
+  console.warn('⚠️  Scaleway AI client initialization failed:', error);
 }
+
+export { scalewayClient };
 
 /**
  * Export the error class for error handling in API routes

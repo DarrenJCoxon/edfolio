@@ -4,10 +4,22 @@ import { scalewayClient, DEFAULT_MODEL } from '@/lib/ai/scaleway-client';
 import { checkRateLimit } from '@/lib/ai/rate-limiter';
 import { prisma } from '@/lib/prisma';
 import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/ai/spelling-utils';
+import { config } from '@/lib/config';
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Validate authentication
+    // 1. Check if AI features are enabled
+    if (!config.features.ai.enabled || !scalewayClient) {
+      return NextResponse.json(
+        {
+          error: 'AI features are not available',
+          message: 'AI features require Scaleway API credentials. Please add SCW_ACCESS_KEY, SCW_SECRET_KEY, and SCW_DEFAULT_PROJECT_ID to enable this feature.',
+        },
+        { status: 503 }
+      );
+    }
+
+    // 2. Validate authentication
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json(

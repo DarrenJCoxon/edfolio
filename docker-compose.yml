@@ -1,0 +1,120 @@
+# =============================================================================
+# Edfolio Docker Compose Configuration
+# =============================================================================
+# One-command setup for local development: docker-compose up
+# Includes PostgreSQL database and Next.js application with hot reload
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: edfolio_db
+    restart: unless-stopped
+
+    environment:
+      # Default credentials for local development
+      # These are safe to commit - only used in local Docker environment
+      POSTGRES_DB: edfolio
+      POSTGRES_USER: edfolio
+      POSTGRES_PASSWORD: edfolio_dev_password
+
+    volumes:
+      # Persist database data between restarts
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      # Expose PostgreSQL for local tools (Prisma Studio, psql, etc.)
+      - "5432:5432"
+
+    healthcheck:
+      # Wait for database to be ready before starting app
+      test: ["CMD-SHELL", "pg_isready -U edfolio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - edfolio_network
+
+  # ---------------------------------------------------------------------------
+  # Next.js Application
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development  # Use development stage with hot reload
+
+    container_name: edfolio_app
+    restart: unless-stopped
+
+    ports:
+      # Expose Next.js dev server
+      - "3000:3000"
+
+    environment:
+      # -----------------------------------------------------------------
+      # Database Connection (connects to db service above)
+      # -----------------------------------------------------------------
+      DATABASE_URL: postgresql://edfolio:edfolio_dev_password@db:5432/edfolio
+
+      # -----------------------------------------------------------------
+      # NextAuth Configuration (auto-configured for local dev)
+      # -----------------------------------------------------------------
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-change-in-production-please
+
+      # -----------------------------------------------------------------
+      # Optional: AI Features (Scaleway)
+      # Leave empty to disable - app will show "AI features unavailable"
+      # Get free API key at: https://console.scaleway.com/
+      # -----------------------------------------------------------------
+      SCALEWAY_API_KEY: ${SCALEWAY_API_KEY:-}
+      SCALEWAY_PROJECT_ID: ${SCALEWAY_PROJECT_ID:-}
+      SCALEWAY_REGION: ${SCALEWAY_REGION:-fr-par}
+
+      # -----------------------------------------------------------------
+      # Optional: Email Features (Resend)
+      # Leave empty to disable - emails will log to console instead
+      # Get free API key at: https://resend.com/
+      # -----------------------------------------------------------------
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+
+      # -----------------------------------------------------------------
+      # Node Environment
+      # -----------------------------------------------------------------
+      NODE_ENV: development
+
+    depends_on:
+      db:
+        # Wait for database to be healthy before starting
+        condition: service_healthy
+
+    volumes:
+      # Mount source code for hot reload (development only)
+      - .:/app
+      # Prevent overwriting node_modules and .next from host
+      - /app/node_modules
+      - /app/.next
+
+    networks:
+      - edfolio_network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    # Named volume for database persistence
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  edfolio_network:
+    driver: bridge

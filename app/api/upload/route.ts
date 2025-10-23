@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { uploadFile, isValidImageType, isValidFileSize } from '@/lib/storage';
+import { config } from '@/lib/config';
 
 /**
  * POST /api/upload
@@ -8,6 +9,17 @@ import { uploadFile, isValidImageType, isValidFileSize } from '@/lib/storage';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Check if storage features are enabled
+    if (!config.features.storage.enabled) {
+      return NextResponse.json(
+        {
+          error: 'File upload is not available',
+          message: 'File upload requires Scaleway S3 credentials. Please add SCALEWAY_ACCESS_KEY, SCALEWAY_SECRET_KEY, and SCALEWAY_BUCKET_NAME to enable this feature.',
+        },
+        { status: 503 }
+      );
+    }
+
     // Verify authentication
     const session = await auth();
     if (!session?.user?.id) {

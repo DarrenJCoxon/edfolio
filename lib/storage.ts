@@ -9,32 +9,26 @@
 
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { nanoid } from 'nanoid';
+import { config } from '@/lib/config';
 
-// Validate required environment variables
-const requiredEnvVars = [
-  'SCALEWAY_ACCESS_KEY',
-  'SCALEWAY_SECRET_KEY',
-  'SCALEWAY_BUCKET_NAME',
-  'SCALEWAY_REGION',
-] as const;
+// Initialize S3 client for Scaleway Object Storage (only if configured)
+let s3Client: S3Client | undefined;
+let BUCKET_NAME = '';
 
-requiredEnvVars.forEach((envVar) => {
-  if (!process.env[envVar]) {
-    console.warn(`Missing environment variable: ${envVar}`);
-  }
-});
-
-// Initialize S3 client for Scaleway Object Storage
-const s3Client = new S3Client({
-  region: process.env.SCALEWAY_REGION || 'fr-par',
-  endpoint: `https://s3.${process.env.SCALEWAY_REGION || 'fr-par'}.scw.cloud`,
-  credentials: {
-    accessKeyId: process.env.SCALEWAY_ACCESS_KEY || '',
-    secretAccessKey: process.env.SCALEWAY_SECRET_KEY || '',
-  },
-});
-
-const BUCKET_NAME = process.env.SCALEWAY_BUCKET_NAME || '';
+if (config.features.storage.enabled) {
+  s3Client = new S3Client({
+    region: config.scalewayStorage.region,
+    endpoint: config.scalewayStorage.getEndpoint(),
+    credentials: {
+      accessKeyId: config.scalewayStorage.accessKey,
+      secretAccessKey: config.scalewayStorage.secretKey,
+    },
+  });
+  BUCKET_NAME = config.scalewayStorage.bucketName;
+} else if (typeof window === 'undefined') {
+  // Only log on server side
+  console.warn('⚠️  File storage is disabled - missing Scaleway S3 credentials');
+}
 
 /**
  * Upload a file to Scaleway Object Storage
@@ -42,6 +36,7 @@ const BUCKET_NAME = process.env.SCALEWAY_BUCKET_NAME || '';
  * @param file - The file to upload (as Buffer)
  * @param options - Upload options
  * @returns The public URL of the uploaded file
+ * @throws Error if storage is not configured
  */
 export async function uploadFile(
   file: Buffer,
@@ -52,6 +47,11 @@ export async function uploadFile(
     contentType: string;
   }
 ): Promise<string> {
+  // Check if storage is configured
+  if (!config.features.storage.enabled || !s3Client) {
+    throw new Error('File storage is not configured. Please add Scaleway S3 credentials.');
+  }
+
   const { userId, noteId, filename, contentType } = options;
 
   // Generate unique key with user/note organization
@@ -74,8 +74,7 @@ export async function uploadFile(
   await s3Client.send(command);
 
   // Return public URL
-  const region = process.env.SCALEWAY_REGION || 'fr-par';
-  const publicUrl = `https://${BUCKET_NAME}.s3.${region}.scw.cloud/${key}`;
+  const publicUrl = `https://${BUCKET_NAME}.s3.${config.scalewayStorage.region}.scw.cloud/${key}`;
 
   return publicUrl;
 }

@@ -4,6 +4,7 @@ import { scalewayClient, DEFAULT_MODEL } from '@/lib/ai/scaleway-client';
 import { checkRateLimit } from '@/lib/ai/rate-limiter';
 import { prisma } from '@/lib/prisma';
 import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/ai/spelling-utils';
+import { config } from '@/lib/config';
 
 /**
  * POST /api/ai/rephrase
@@ -25,7 +26,18 @@ import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/a
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Validate authentication
+    // 1. Check if AI features are enabled
+    if (!config.features.ai.enabled || !scalewayClient) {
+      return NextResponse.json(
+        {
+          error: 'AI features are not available',
+          message: 'AI features require Scaleway API credentials. Please add SCW_ACCESS_KEY, SCW_SECRET_KEY, and SCW_DEFAULT_PROJECT_ID to enable this feature.',
+        },
+        { status: 503 }
+      );
+    }
+
+    // 2. Validate authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -34,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Check rate limit
+    // 3. Check rate limit
     const rateLimitResult = checkRateLimit(session.user.id);
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
@@ -50,7 +62,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Parse and validate input
+    // 4. Parse and validate input
     const body = await request.json();
     const { text, vaultId, noteId } = body;
 
@@ -68,7 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Verify user owns the folio/note (security)
+    // 5. Verify user owns the folio/note (security)
     if (vaultId && noteId) {
       const folio = await prisma.folio.findFirst({
         where: {
@@ -85,11 +97,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Fetch user's spelling preference
+    // 6. Fetch user's spelling preference
     const spellingPref = await getUserSpellingPreference(session.user.id);
     const spellingInstruction = getSpellingPromptInstruction(spellingPref);
 
-    // 6. Call Scaleway AI for rephrasing
+    // 7. Call Scaleway AI for rephrasing
     const result = await scalewayClient.chat({
       model: DEFAULT_MODEL,
       messages: [
@@ -113,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     const rephrasedText = result.choices[0].message.content.trim();
 
-    // 7. Return response
+    // 8. Return response
     return NextResponse.json(
       {
         data: {
