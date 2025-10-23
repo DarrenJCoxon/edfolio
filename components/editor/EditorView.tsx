@@ -12,6 +12,7 @@ import { PublishButton } from './PublishButton';
 import { OutlineDrawer } from './OutlineDrawer';
 import { TabBar } from './TabBar';
 import { TabOverflowMenu } from './TabOverflowMenu';
+import { CollaborationBanner } from './CollaborationBanner';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
 import { useTabKeyboardShortcuts } from '@/lib/hooks/useTabKeyboardShortcuts';
 import { EditorViewProps, RephraseResponse, SummarizeResponse, FixGrammarResponse, HeadingItem } from '@/types';
@@ -31,6 +32,12 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noteMeta, setNoteMeta] = useState<{
+    isOwner: boolean;
+    collaboratorRole: string | null;
+    canEdit: boolean;
+    ownerName?: string;
+  } | null>(null);
   const [showHighlightMenu, setShowHighlightMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedText, setSelectedText] = useState('');
@@ -92,12 +99,15 @@ export function EditorView({ className, note }: EditorViewProps) {
       setNoteContent(cachedContent);
       setIsLoading(false);
       setError(null);
-      return;
+      // Note: We still need to fetch metadata even with cached content
+      // So we don't return early here for metadata
     }
 
-    // Not in cache, fetch from API
+    // Fetch from API (for metadata or if not cached)
     const fetchNote = async () => {
-      setIsLoading(true);
+      if (cachedContent === null) {
+        setIsLoading(true);
+      }
       setError(null);
 
       try {
@@ -108,11 +118,19 @@ export function EditorView({ className, note }: EditorViewProps) {
           throw new Error(errorData.error || 'Failed to load note');
         }
 
-        const { data } = await response.json();
+        const { data, meta } = await response.json();
 
         // Cache the content for instant future access
         cacheNoteContent(activeNoteId, data.content);
         setNoteContent(data.content);
+
+        // Store metadata about collaboration status
+        if (meta) {
+          setNoteMeta({
+            ...meta,
+            ownerName: data.folio?.owner?.name || undefined,
+          });
+        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load note';
         setError(errorMessage);
@@ -877,6 +895,14 @@ export function EditorView({ className, note }: EditorViewProps) {
         onOpenChange={setShowOverflowMenu}
         trigger={<div />}
       />
+
+      {/* Collaboration Banner - Show when user is accessing shared note */}
+      {noteMeta && !noteMeta.isOwner && noteMeta.collaboratorRole && (
+        <CollaborationBanner
+          role={noteMeta.collaboratorRole as 'editor' | 'viewer'}
+          ownerName={noteMeta.ownerName}
+        />
+      )}
 
       {/* Floating Toolbar - Top Right */}
       <div className="fixed top-[var(--spacing-md)] right-[var(--spacing-md)] z-50 flex items-center gap-[var(--spacing-sm)] bg-[var(--background)] border border-[var(--border)] rounded-md p-[var(--spacing-sm)] shadow-lg">
