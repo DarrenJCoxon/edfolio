@@ -989,6 +989,73 @@ html, body {
   margin: var(--spacing-lg) 0;
 }
 
+/* Callout blocks for public pages */
+.public-content .callout-block {
+  background-color: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+}
+
+.public-content .callout-block > p:first-child {
+  margin-top: 0;
+}
+
+.public-content .callout-block > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Syntax highlighting for public pages */
+.public-content pre .hljs-keyword {
+  color: #C678DD;
+}
+
+.public-content pre .hljs-string {
+  color: #98C379;
+}
+
+.public-content pre .hljs-number {
+  color: #D19A66;
+}
+
+.public-content pre .hljs-comment {
+  color: #5C6370;
+  font-style: italic;
+}
+
+.public-content pre .hljs-function {
+  color: #61AFEF;
+}
+
+.public-content pre .hljs-variable {
+  color: #E06C75;
+}
+
+.public-content pre .hljs-title {
+  color: #61AFEF;
+}
+
+.public-content pre .hljs-attr {
+  color: #D19A66;
+}
+
+.public-content pre .hljs-built_in {
+  color: #E5C07B;
+}
+
+.public-content pre .hljs-literal {
+  color: #56B6C2;
+}
+
+.public-content pre .hljs-tag {
+  color: #E06C75;
+}
+
+.public-content pre .hljs-name {
+  color: #E06C75;
+}
+
 /* Outline Drawer Styles */
 .outline-drawer {
   background-color: var(--outline-drawer-bg);

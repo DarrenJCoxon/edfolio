@@ -1,0 +1,240 @@
+{
+  "title": "Comprehensive Formatting Test Document",
+  "content": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "heading",
+        "attrs": { "level": 1 },
+        "content": [{ "type": "text", "text": "H1: Main Title" }]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 2 },
+        "content": [{ "type": "text", "text": "H2: Secondary Title" }]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 3 },
+        "content": [{ "type": "text", "text": "H3: Tertiary Title" }]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          { "type": "text", "text": "This is a paragraph with " },
+          { "type": "text", "marks": [{ "type": "bold" }], "text": "bold text" },
+          { "type": "text", "text": ", " },
+          { "type": "text", "marks": [{ "type": "italic" }], "text": "italic text" },
+          { "type": "text", "text": ", and " },
+          {
+            "type": "text",
+            "marks": [{ "type": "link", "attrs": { "href": "https://example.com", "target": "_blank" } }],
+            "text": "a link"
+          },
+          { "type": "text", "text": ". It also has " },
+          { "type": "text", "marks": [{ "type": "code" }], "text": "inline code" },
+          { "type": "text", "text": "." }
+        ]
+      },
+      {
+        "type": "callout",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              { "type": "text", "text": "This is a callout block. It should have a light blue background with a blue left border." }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 2 },
+        "content": [{ "type": "text", "text": "Lists" }]
+      },
+      {
+        "type": "bulletList",
+        "content": [
+          {
+            "type": "listItem",
+            "content": [
+              { "type": "paragraph", "content": [{ "type": "text", "text": "Unordered list item 1" }] }
+            ]
+          },
+          {
+            "type": "listItem",
+            "content": [
+              { "type": "paragraph", "content": [{ "type": "text", "text": "Unordered list item 2" }] },
+              {
+                "type": "bulletList",
+                "content": [
+                  {
+                    "type": "listItem",
+                    "content": [
+                      { "type": "paragraph", "content": [{ "type": "text", "text": "Nested item 1" }] }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "content": [
+                      { "type": "paragraph", "content": [{ "type": "text", "text": "Nested item 2" }] }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "orderedList",
+        "attrs": { "start": 1 },
+        "content": [
+          {
+            "type": "listItem",
+            "content": [
+              { "type": "paragraph", "content": [{ "type": "text", "text": "Ordered list item 1" }] }
+            ]
+          },
+          {
+            "type": "listItem",
+            "content": [
+              { "type": "paragraph", "content": [{ "type": "text", "text": "Ordered list item 2" }] }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 2 },
+        "content": [{ "type": "text", "text": "Code Blocks" }]
+      },
+      {
+        "type": "paragraph",
+        "content": [{ "type": "text", "text": "JavaScript code with syntax highlighting:" }]
+      },
+      {
+        "type": "codeBlock",
+        "attrs": { "language": "javascript" },
+        "content": [
+          {
+            "type": "text",
+            "text": "function greet(name) {\n  const message = `Hello, ${name}!`;\n  console.log(message);\n  return message;\n}\n\ngreet('World');"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [{ "type": "text", "text": "Python code with syntax highlighting:" }]
+      },
+      {
+        "type": "codeBlock",
+        "attrs": { "language": "python" },
+        "content": [
+          {
+            "type": "text",
+            "text": "def fibonacci(n):\n    \"\"\"Generate Fibonacci sequence\"\"\"\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nlist(fibonacci(10))"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 2 },
+        "content": [{ "type": "text", "text": "Blockquote" }]
+      },
+      {
+        "type": "blockquote",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              { "type": "text", "text": "This is a blockquote. It should have a left border and italic text." }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 2 },
+        "content": [{ "type": "text", "text": "Table" }]
+      },
+      {
+        "type": "table",
+        "content": [
+          {
+            "type": "tableRow",
+            "content": [
+              {
+                "type": "tableHeader",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Header 1" }] }]
+              },
+              {
+                "type": "tableHeader",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Header 2" }] }]
+              },
+              {
+                "type": "tableHeader",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Header 3" }] }]
+              }
+            ]
+          },
+          {
+            "type": "tableRow",
+            "content": [
+              {
+                "type": "tableCell",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Row 1, Cell 1" }] }]
+              },
+              {
+                "type": "tableCell",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Row 1, Cell 2" }] }]
+              },
+              {
+                "type": "tableCell",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Row 1, Cell 3" }] }]
+              }
+            ]
+          },
+          {
+            "type": "tableRow",
+            "content": [
+              {
+                "type": "tableCell",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Row 2, Cell 1" }] }]
+              },
+              {
+                "type": "tableCell",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Row 2, Cell 2" }] }]
+              },
+              {
+                "type": "tableCell",
+                "attrs": { "colspan": 1, "rowspan": 1 },
+                "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Row 2, Cell 3" }] }]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": { "level": 2 },
+        "content": [{ "type": "text", "text": "Horizontal Rule" }]
+      },
+      {
+        "type": "horizontalRule"
+      },
+      {
+        "type": "paragraph",
+        "content": [{ "type": "text", "text": "Content after horizontal rule." }]
+      }
+    ]
+  }
+}
