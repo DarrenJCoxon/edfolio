@@ -237,7 +237,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
         <div
           className={cn(
-            'absolute top-0 right-0 w-[var(--spacing-xs)] h-full cursor-col-resize',
+            'absolute top-0 right-0 w-1 h-full cursor-col-resize',
             'hover:bg-accent/50 transition-colors',
             'border-r border-border',
             isResizing && 'bg-accent'
