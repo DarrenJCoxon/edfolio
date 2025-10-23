@@ -33,6 +33,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
     toggleFolderExpanded,
     toggleSidebar,
     setSelectedFolder,
+    openTab,
   } = useFoliosStore();
 
   const { isLoading } = useFolioData();
@@ -52,6 +53,15 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
   const { createFolder, createNote, renameItem, deleteItem } = useFolioCrud();
   const { sidebarWidth, isResizing, handleMouseDown } = useSidebarResize();
+
+  // Handle note click to open in tab
+  const handleNoteClick = (noteId: string) => {
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      setActiveNote(noteId);
+      openTab(noteId, note.title);
+    }
+  };
 
   // Keyboard navigation
   useKeyboardNavigation({
@@ -87,7 +97,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
         );
       }
     },
-    onOpenNote: setActiveNote,
+    onOpenNote: handleNoteClick,
   });
 
   // Handler functions
@@ -211,7 +221,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
                 activeNoteId={activeNoteId}
                 expandedFolderIds={expandedFolderIds}
                 onToggleFolderExpand={toggleFolderExpanded}
-                onSelectNote={setActiveNote}
+                onSelectNote={handleNoteClick}
                 onRename={(type, id, name) => openRenameDialog(type, id, name)}
                 onDelete={(type, id, name) => openDeleteDialog(type, id, name)}
                 onCreateNote={(parentId) => openCreateDialog('note', parentId)}

@@ -11,10 +11,13 @@ import { SummarizePreview } from './SummarizePreview';
 import { GrammarFixPreview } from './GrammarFixPreview';
 import { PublishButton } from './PublishButton';
 import { OutlineDrawer } from './OutlineDrawer';
+import { TabBar } from './TabBar';
+import { TabOverflowMenu } from './TabOverflowMenu';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
+import { useTabKeyboardShortcuts } from '@/lib/hooks/useTabKeyboardShortcuts';
 import { EditorViewProps, RephraseResponse, SummarizeResponse, FixGrammarResponse, HeadingItem } from '@/types';
 import { cn } from '@/lib/utils';
-import { Loader2, AlertCircle, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { Loader2, AlertCircle, PanelRightOpen, PanelRightClose, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFoliosStore } from '@/lib/stores/folios-store';
@@ -62,6 +65,15 @@ export function EditorView({ className, note }: EditorViewProps) {
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
+
+  // Tab management
+  const openTabs = useFoliosStore((state) => state.openTabs);
+  const closeTab = useFoliosStore((state) => state.closeTab);
+  const closeAllTabs = useFoliosStore((state) => state.closeAllTabs);
+  const setActiveNote = useFoliosStore((state) => state.setActiveNote);
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
+  const [hasTabOverflow, setHasTabOverflow] = useState(false);
+  const tabBarRef = useRef<HTMLDivElement | null>(null);
 
   // Fetch note content when activeNoteId changes
   useEffect(() => {
@@ -707,8 +719,45 @@ export function EditorView({ className, note }: EditorViewProps) {
     }, 500);
   }, [headings]);
 
-  // Empty state - no note selected
-  if (!activeNoteId) {
+  // Keyboard shortcuts for tabs
+  useTabKeyboardShortcuts({
+    openTabs,
+    activeNoteId: activeNoteId || null,
+    onSwitchTab: (index) => {
+      const tab = openTabs[index];
+      if (tab) {
+        setActiveNote(tab.noteId);
+      }
+    },
+    onCloseActiveTab: () => {
+      if (activeNoteId) {
+        closeTab(activeNoteId);
+      }
+    },
+  });
+
+  // Tab overflow detection
+  useEffect(() => {
+    if (!tabBarRef.current) return;
+
+    const observer = new ResizeObserver(() => {
+      if (!tabBarRef.current) return;
+
+      const containerWidth = tabBarRef.current.offsetWidth;
+      const tabsContainer = tabBarRef.current.querySelector('.scrollbar-hide');
+      const tabsWidth = tabsContainer?.scrollWidth || 0;
+
+      // Set overflow if tabs width exceeds container width (with 100px buffer for overflow button)
+      setHasTabOverflow(tabsWidth > containerWidth - 100);
+    });
+
+    observer.observe(tabBarRef.current);
+
+    return () => observer.disconnect();
+  }, [openTabs]);
+
+  // Empty state - no note selected or no tabs open
+  if (!activeNoteId || openTabs.length === 0) {
     return (
       <div
         className={cn(
@@ -718,9 +767,10 @@ export function EditorView({ className, note }: EditorViewProps) {
           className
         )}
       >
-        <div className="text-center">
-          <p className="text-lg text-[var(--muted)]">
-            Select a note to begin writing
+        <div className="flex flex-col items-center gap-[var(--spacing-md)] text-center">
+          <FileText className="h-12 w-12 text-[var(--muted-foreground)]" />
+          <p className="text-lg text-[var(--muted-foreground)]">
+            Select a note to begin
           </p>
         </div>
       </div>
@@ -784,6 +834,37 @@ export function EditorView({ className, note }: EditorViewProps) {
         className
       )}
     >
+      {/* Tab Bar */}
+      {openTabs.length > 0 && (
+        <div ref={tabBarRef}>
+          <TabBar
+            openTabs={openTabs}
+            activeNoteId={activeNoteId}
+            onTabClick={(noteId) => setActiveNote(noteId)}
+            onTabClose={closeTab}
+            onShowOverflowMenu={() => setShowOverflowMenu(true)}
+            hasOverflow={hasTabOverflow}
+          />
+        </div>
+      )}
+
+      {/* Tab Overflow Menu */}
+      <TabOverflowMenu
+        openTabs={openTabs}
+        activeNoteId={activeNoteId}
+        onTabClick={(noteId) => {
+          setActiveNote(noteId);
+          setShowOverflowMenu(false);
+        }}
+        onCloseAll={() => {
+          closeAllTabs();
+          setShowOverflowMenu(false);
+        }}
+        isOpen={showOverflowMenu}
+        onOpenChange={setShowOverflowMenu}
+        trigger={<div />}
+      />
+
       {/* Header with save indicator and publish button */}
       <div className="flex items-center justify-between p-[var(--spacing-md)] border-b border-[var(--border)]">
         <h2 className="text-sm font-semibold text-[var(--foreground)]">
