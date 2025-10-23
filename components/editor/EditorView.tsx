@@ -80,7 +80,11 @@ export function EditorView({ className, note }: EditorViewProps) {
 
   // Filter tabs for current folio with useMemo to maintain stable reference
   const openTabs = useMemo(
-    () => allOpenTabs.filter((tab) => tab.folioId === activeFolioId),
+    () => {
+      // If no active folio, return empty array to show "Select a note to begin"
+      if (!activeFolioId) return [];
+      return allOpenTabs.filter((tab) => tab.folioId === activeFolioId);
+    },
     [allOpenTabs, activeFolioId]
   );
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);

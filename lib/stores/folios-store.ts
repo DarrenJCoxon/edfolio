@@ -87,7 +87,9 @@ const loadTabsFromStorage = (): Tab[] => {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        return parsed;
+        // Filter out legacy tabs without folioId (from before migration)
+        // We can't assign them to a folio without knowing which one they belong to
+        return parsed.filter((tab) => tab.folioId !== undefined);
       }
     }
   } catch (error) {
