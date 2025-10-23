@@ -875,6 +875,36 @@ export function EditorView({ className, note }: EditorViewProps) {
             onTabClose={closeTab}
             onShowOverflowMenu={() => setShowOverflowMenu(true)}
             hasOverflow={hasTabOverflow}
+            rightControls={
+              <>
+                <SaveIndicator status={saveStatus} error={saveError} />
+                <PublishButton
+                  noteId={activeNoteId}
+                  isPublished={isPublished}
+                  publishedSlug={publishedSlug}
+                  onPublishSuccess={handlePublishSuccess}
+                  onUnpublishSuccess={handleUnpublishSuccess}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                      className="outline-drawer-toggle p-[var(--spacing-xs)] hover:bg-[var(--muted)] rounded transition-colors"
+                      aria-label="Toggle outline"
+                    >
+                      {isDrawerOpen ? (
+                        <PanelRightClose className="h-5 w-5 text-[var(--muted-foreground)]" />
+                      ) : (
+                        <PanelRightOpen className="h-5 w-5 text-[var(--muted-foreground)]" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isDrawerOpen ? 'Close outline' : 'Open outline'}
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            }
           />
         </div>
       )}
@@ -903,38 +933,6 @@ export function EditorView({ className, note }: EditorViewProps) {
           ownerName={noteMeta.ownerName}
         />
       )}
-
-      {/* Floating Toolbar - Top Right */}
-      <div className="fixed top-[var(--spacing-md)] right-[var(--spacing-md)] z-50 flex items-center gap-[var(--spacing-sm)] bg-[var(--background)] border border-[var(--border)] rounded-md p-[var(--spacing-sm)] shadow-lg">
-        <SaveIndicator status={saveStatus} error={saveError} />
-        <PublishButton
-          noteId={activeNoteId}
-          isPublished={isPublished}
-          publishedSlug={publishedSlug}
-          onPublishSuccess={handlePublishSuccess}
-          onUnpublishSuccess={handleUnpublishSuccess}
-        />
-
-        {/* Outline drawer toggle button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-              className="outline-drawer-toggle p-[var(--spacing-xs)] hover:bg-[var(--muted)] rounded transition-colors"
-              aria-label="Toggle outline"
-            >
-              {isDrawerOpen ? (
-                <PanelRightClose className="h-5 w-5 text-[var(--muted-foreground)]" />
-              ) : (
-                <PanelRightOpen className="h-5 w-5 text-[var(--muted-foreground)]" />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isDrawerOpen ? 'Close outline' : 'Open outline'}
-          </TooltipContent>
-        </Tooltip>
-      </div>
 
       {/* Editor content */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
