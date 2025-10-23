@@ -15,12 +15,16 @@ import { cn } from '@/lib/utils';
 import { Callout } from '@/lib/editor/callout';
 import { SlashCommands } from '@/lib/editor/slash-commands/extension';
 import { lowlight } from '@/lib/editor/code-block-config';
+import { InlineTitleField } from './InlineTitleField';
 
 import type { Editor as TipTapEditorType } from '@tiptap/react';
 
 export interface TipTapEditorProps {
   content: unknown;
   onChange: (content: unknown) => void;
+  title?: string;
+  onTitleChange?: (title: string) => void;
+  isNewNote?: boolean;
   onSelectionChange?: (text: string, hasSelection: boolean) => void;
   onEditorReady?: (editor: TipTapEditorType) => void;
   editable?: boolean;
@@ -31,6 +35,9 @@ export interface TipTapEditorProps {
 export function TipTapEditor({
   content,
   onChange,
+  title,
+  onTitleChange,
+  isNewNote = false,
   onSelectionChange,
   onEditorReady,
   editable = true,
@@ -126,6 +133,13 @@ export function TipTapEditor({
 
   return (
     <div className={cn('tiptap-editor', className)}>
+      {title !== undefined && onTitleChange && (
+        <InlineTitleField
+          title={title}
+          onTitleChange={onTitleChange}
+          isNewNote={isNewNote}
+        />
+      )}
       <EditorContent editor={editor} />
     </div>
   );

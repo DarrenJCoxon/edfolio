@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TipTapEditor } from './TipTapEditor';
 import { SaveIndicator } from './SaveIndicator';
-import { InlineFileNameEditor } from './InlineFileNameEditor';
 import { HighlightMenu } from './HighlightMenu';
 import { RephrasePreview } from './RephrasePreview';
 import { SummarizePreview } from './SummarizePreview';
@@ -32,7 +31,6 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isEditingFileName, setIsEditingFileName] = useState(false);
   const [showHighlightMenu, setShowHighlightMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedText, setSelectedText] = useState('');
@@ -612,42 +610,35 @@ export function EditorView({ className, note }: EditorViewProps) {
     }
   };
 
-  // Handle file name save
-  const handleFileNameSave = async (newName: string) => {
-    if (!activeNoteId || !note) return;
+  // Handle title change from InlineTitleField
+  const handleTitleChange = useCallback(
+    async (newTitle: string) => {
+      if (!activeNoteId || !note) return;
 
-    try {
-      const response = await fetch(`/api/notes/${activeNoteId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title: newName }),
-      });
+      try {
+        const response = await fetch(`/api/notes/${activeNoteId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title: newTitle }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to rename file');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update title');
+        }
+
+        // Update local state
+        updateNote(activeNoteId, { title: newTitle });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to update title';
+        toast.error(errorMessage);
+        console.error('Error updating title:', err);
       }
-
-      // Update local state
-      updateNote(activeNoteId, { title: newName });
-      setIsEditingFileName(false);
-      toast.success('File renamed successfully');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to rename file';
-      toast.error(errorMessage);
-      throw err; // Re-throw to let InlineFileNameEditor handle it
-    }
-  };
-
-  const handleFileNameCancel = () => {
-    setIsEditingFileName(false);
-  };
-
-  const handleFileNameEditStart = () => {
-    setIsEditingFileName(true);
-  };
+    },
+    [activeNoteId, note, updateNote]
+  );
 
   // Handle successful publish
   const handlePublishSuccess = useCallback((slug: string) => {
@@ -887,47 +878,36 @@ export function EditorView({ className, note }: EditorViewProps) {
         trigger={<div />}
       />
 
-      {/* Header with save indicator and publish button */}
-      <div className="flex items-center justify-between p-[var(--spacing-md)] border-b border-[var(--border)]">
-        <h2 className="text-sm font-semibold text-[var(--foreground)]">
-          <InlineFileNameEditor
-            fileName={note?.title || 'Untitled'}
-            isEditing={isEditingFileName}
-            onSave={handleFileNameSave}
-            onCancel={handleFileNameCancel}
-            onEditStart={handleFileNameEditStart}
-          />
-        </h2>
-        <div className="flex items-center gap-[var(--spacing-md)]">
-          <SaveIndicator status={saveStatus} error={saveError} />
-          <PublishButton
-            noteId={activeNoteId}
-            isPublished={isPublished}
-            publishedSlug={publishedSlug}
-            onPublishSuccess={handlePublishSuccess}
-            onUnpublishSuccess={handleUnpublishSuccess}
-          />
+      {/* Floating Toolbar - Top Right */}
+      <div className="fixed top-[var(--spacing-md)] right-[var(--spacing-md)] z-50 flex items-center gap-[var(--spacing-sm)] bg-[var(--background)] border border-[var(--border)] rounded-md p-[var(--spacing-sm)] shadow-lg">
+        <SaveIndicator status={saveStatus} error={saveError} />
+        <PublishButton
+          noteId={activeNoteId}
+          isPublished={isPublished}
+          publishedSlug={publishedSlug}
+          onPublishSuccess={handlePublishSuccess}
+          onUnpublishSuccess={handleUnpublishSuccess}
+        />
 
-          {/* Outline drawer toggle button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                className="outline-drawer-toggle p-[var(--spacing-xs)] hover:bg-[var(--muted)] rounded transition-colors"
-                aria-label="Toggle outline"
-              >
-                {isDrawerOpen ? (
-                  <PanelRightClose className="h-5 w-5 text-[var(--muted-foreground)]" />
-                ) : (
-                  <PanelRightOpen className="h-5 w-5 text-[var(--muted-foreground)]" />
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isDrawerOpen ? 'Close outline' : 'Open outline'}
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        {/* Outline drawer toggle button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+              className="outline-drawer-toggle p-[var(--spacing-xs)] hover:bg-[var(--muted)] rounded transition-colors"
+              aria-label="Toggle outline"
+            >
+              {isDrawerOpen ? (
+                <PanelRightClose className="h-5 w-5 text-[var(--muted-foreground)]" />
+              ) : (
+                <PanelRightOpen className="h-5 w-5 text-[var(--muted-foreground)]" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isDrawerOpen ? 'Close outline' : 'Open outline'}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Editor content */}
@@ -936,6 +916,9 @@ export function EditorView({ className, note }: EditorViewProps) {
           <TipTapEditor
             content={noteContent}
             onChange={handleContentChange}
+            title={note?.title || ''}
+            onTitleChange={handleTitleChange}
+            isNewNote={false}
             onSelectionChange={handleSelectionChange}
             onEditorReady={handleEditorReady}
             editable={true}

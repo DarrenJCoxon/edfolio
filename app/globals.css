@@ -221,6 +221,14 @@
   --tab-padding-x: 1rem;
   --tab-padding-y: 0.5rem;
   --tab-gap: 0.25rem;
+
+  /* Inline Title Field */
+  --title-font-size: 2.25rem;
+  --title-font-weight: 700;
+  --title-line-height: 2.75rem;
+  --title-placeholder-color: var(--muted);
+  --title-margin-top: 2rem;     /* Space above title */
+  --title-margin-bottom: 3rem;  /* Generous spacing like Obsidian/Notion */
 }
 
 /* Dark mode class (for theme switcher) */
