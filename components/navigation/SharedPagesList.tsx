@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFoliosStore } from '@/lib/stores/folios-store';
 import { SharedDocumentContextMenu } from './SharedDocumentContextMenu';
+import { useFoliosStore } from '@/lib/stores/folios-store';
 
 interface SharedPage {
   id: string;
