@@ -29,8 +29,11 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 title: true,
+                folioId: true,
                 folio: {
                   select: {
+                    id: true,
+                    name: true,
                     owner: {
                       select: {
                         id: true,
@@ -63,6 +66,8 @@ export async function GET(request: NextRequest) {
       noteId: collab.page.note.id,
       pageTitle: collab.page.note.title,
       slug: collab.page.slug,
+      folioId: collab.page.note.folioId,
+      folioName: collab.page.note.folio.name,
       sharerName: collab.page.note.folio.owner.name,
       sharerEmail: collab.page.note.folio.owner.email,
       permission: collab.share?.permission || collab.role,
