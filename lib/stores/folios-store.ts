@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { Folio, Folder, Note } from '@/types';
 
+interface Tab {
+  noteId: string;
+  title: string;
+}
+
+// Cache entry for note content
+interface NoteContentCache {
+  content: unknown;
+  timestamp: number;
+}
+
 interface FoliosState {
   folios: Folio[];
   folders: Folder[];
@@ -12,6 +23,11 @@ interface FoliosState {
   sidebarCollapsed: boolean;
   focusedItemId: string | null;
   focusedItemType: 'folio' | 'folder' | 'note' | null;
+  openTabs: Tab[];
+  MAX_TABS: number;
+
+  // Note content cache for instant tab switching
+  noteContentCache: Map<string, NoteContentCache>;
 
   // Folio actions
   setFolios: (folios: Folio[]) => void;
@@ -35,6 +51,19 @@ interface FoliosState {
   setActiveNote: (id: string | null) => void;
   setSelectedFolder: (id: string | null) => void;
 
+  // Tab actions
+  openTab: (noteId: string, title: string) => void;
+  closeTab: (noteId: string) => void;
+  closeAllTabs: () => void;
+  updateTabTitle: (noteId: string, newTitle: string) => void;
+  reorderTabs: (fromIndex: number, toIndex: number) => void;
+
+  // Note content cache actions
+  cacheNoteContent: (noteId: string, content: unknown) => void;
+  getCachedNoteContent: (noteId: string) => unknown | null;
+  clearNoteContentCache: () => void;
+  removeCachedNote: (noteId: string) => void;
+
   // Sidebar actions
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -49,6 +78,31 @@ interface FoliosState {
   getRootFolders: (folioId: string) => Folder[];
 }
 
+// Helper to load tabs from localStorage
+const loadTabsFromStorage = (): Tab[] => {
+  try {
+    const saved = localStorage.getItem('edfolio-open-tabs');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load tabs from localStorage:', error);
+  }
+  return [];
+};
+
+// Helper to save tabs to localStorage
+const saveTabsToStorage = (tabs: Tab[]): void => {
+  try {
+    localStorage.setItem('edfolio-open-tabs', JSON.stringify(tabs));
+  } catch (error) {
+    console.error('Failed to save tabs to localStorage:', error);
+  }
+};
+
 export const useFoliosStore = create<FoliosState>((set, get) => ({
   folios: [],
   folders: [],
@@ -60,6 +114,9 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   sidebarCollapsed: false,
   focusedItemId: null,
   focusedItemType: null,
+  openTabs: typeof window !== 'undefined' ? loadTabsFromStorage() : [],
+  MAX_TABS: 10,
+  noteContentCache: new Map<string, NoteContentCache>(),
 
   // Folio actions
   setFolios: (folios) => set({ folios }),
@@ -146,17 +203,41 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
     })),
 
   updateNote: (id, updates) =>
-    set((state) => ({
-      notes: state.notes.map((n) =>
+    set((state) => {
+      const updatedNotes = state.notes.map((n) =>
         n.id === id ? { ...n, ...updates } : n
-      ),
-    })),
+      );
+
+      // Update tab title if note title changed
+      let updatedTabs = state.openTabs;
+      if (updates.title !== undefined) {
+        updatedTabs = state.openTabs.map((tab) =>
+          tab.noteId === id ? { ...tab, title: updates.title as string } : tab
+        );
+        saveTabsToStorage(updatedTabs);
+      }
+
+      return {
+        notes: updatedNotes,
+        openTabs: updatedTabs,
+      };
+    }),
 
   deleteNote: (id) =>
     set((state) => {
       const newState: Partial<FoliosState> = {
         notes: state.notes.filter((n) => n.id !== id),
       };
+
+      // Remove tab if note had one open
+      const newTabs = state.openTabs.filter((t) => t.noteId !== id);
+      newState.openTabs = newTabs;
+      saveTabsToStorage(newTabs);
+
+      // Remove cached content for deleted note
+      const newCache = new Map(state.noteContentCache);
+      newCache.delete(id);
+      newState.noteContentCache = newCache;
 
       // If deleted note was active, clear active note
       if (state.activeNoteId === id) {
@@ -169,6 +250,112 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   setActiveNote: (id) => set({ activeNoteId: id }),
 
   setSelectedFolder: (id) => set({ selectedFolderId: id }),
+
+  // Tab actions
+  openTab: (noteId, title) => {
+    const state = get();
+    const existingTabIndex = state.openTabs.findIndex((t) => t.noteId === noteId);
+
+    if (existingTabIndex !== -1) {
+      // Tab exists, just switch to it
+      set({ activeNoteId: noteId });
+      return;
+    }
+
+    // Create new tab
+    let newTabs = [...state.openTabs, { noteId, title }];
+
+    // If exceeds max, remove oldest tab (first in array)
+    if (newTabs.length > state.MAX_TABS) {
+      newTabs = newTabs.slice(1);
+    }
+
+    saveTabsToStorage(newTabs);
+    set({
+      openTabs: newTabs,
+      activeNoteId: noteId,
+    });
+  },
+
+  closeTab: (noteId) => {
+    const state = get();
+    const tabIndex = state.openTabs.findIndex((t) => t.noteId === noteId);
+
+    if (tabIndex === -1) return;
+
+    const newTabs = state.openTabs.filter((t) => t.noteId !== noteId);
+
+    // Determine new active tab if closing active tab
+    let newActiveNoteId = state.activeNoteId;
+
+    if (noteId === state.activeNoteId) {
+      if (newTabs.length === 0) {
+        newActiveNoteId = null;
+      } else {
+        // Switch to adjacent tab (prefer right, fallback to left)
+        const adjacentIndex = tabIndex < newTabs.length ? tabIndex : tabIndex - 1;
+        newActiveNoteId = newTabs[adjacentIndex]?.noteId || null;
+      }
+    }
+
+    saveTabsToStorage(newTabs);
+    set({
+      openTabs: newTabs,
+      activeNoteId: newActiveNoteId,
+    });
+  },
+
+  closeAllTabs: () => {
+    saveTabsToStorage([]);
+    set({
+      openTabs: [],
+      activeNoteId: null,
+    });
+  },
+
+  updateTabTitle: (noteId, newTitle) => {
+    const state = get();
+    const newTabs = state.openTabs.map((tab) =>
+      tab.noteId === noteId ? { ...tab, title: newTitle } : tab
+    );
+    saveTabsToStorage(newTabs);
+    set({ openTabs: newTabs });
+  },
+
+  reorderTabs: (fromIndex, toIndex) => {
+    const state = get();
+    const newTabs = [...state.openTabs];
+    const [movedTab] = newTabs.splice(fromIndex, 1);
+    newTabs.splice(toIndex, 0, movedTab);
+    saveTabsToStorage(newTabs);
+    set({ openTabs: newTabs });
+  },
+
+  // Note content cache actions
+  cacheNoteContent: (noteId, content) =>
+    set((state) => {
+      const newCache = new Map(state.noteContentCache);
+      newCache.set(noteId, {
+        content,
+        timestamp: Date.now(),
+      });
+      return { noteContentCache: newCache };
+    }),
+
+  getCachedNoteContent: (noteId) => {
+    const cache = get().noteContentCache.get(noteId);
+    return cache ? cache.content : null;
+  },
+
+  clearNoteContentCache: () =>
+    set({ noteContentCache: new Map<string, NoteContentCache>() }),
+
+  removeCachedNote: (noteId) =>
+    set((state) => {
+      const newCache = new Map(state.noteContentCache);
+      newCache.delete(noteId);
+      return { noteContentCache: newCache };
+    }),
 
   // Sidebar actions
   toggleSidebar: () =>

@@ -206,74 +206,24 @@
   --outline-heading-active: var(--accent);
   --outline-heading-active-bg: rgba(59, 130, 246, 0.1);
   --outline-indent: 1rem;
+
+  /* Tab Colors */
+  --tab-bg: var(--card);
+  --tab-bg-active: var(--background);
+  --tab-text: var(--muted-foreground);
+  --tab-text-active: var(--foreground);
+  --tab-border: var(--border);
+  --tab-border-active: var(--accent);
+  --tab-hover-bg: rgba(59, 130, 246, 0.05);
+
+  /* Tab Spacing */
+  --tab-height: 2.5rem;
+  --tab-padding-x: 1rem;
+  --tab-padding-y: 0.5rem;
+  --tab-gap: 0.25rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Colors - Dark Theme */
-    --background: #1A1A1A;
-    --foreground: #F3F4F6;
-    --muted: #9CA3AF;
-    --muted-foreground: #9CA3AF;
-    --border: #374151;
-    --accent: #3B82F6;
-    --accent-foreground: #FFFFFF;
-    --card: #262626;
-    --card-foreground: #F3F4F6;
-    --popover: #262626;
-    --popover-foreground: #F3F4F6;
-    --primary: #F3F4F6;
-    --primary-foreground: #1A1A1A;
-    --secondary: #374151;
-    --secondary-foreground: #F3F4F6;
-    --destructive: #EF4444;
-    --destructive-foreground: #FCA5A5;
-    --destructive-border: #EF4444;
-    --destructive-bg: #450a0a;
-    --input: #374151;
-    --ring: #3B82F6;
-
-    /* Sidebar */
-    --sidebar: #262626;
-    --sidebar-foreground: #F3F4F6;
-    --sidebar-primary: #F3F4F6;
-    --sidebar-primary-foreground: #1A1A1A;
-    --sidebar-accent: #374151;
-    --sidebar-accent-foreground: #F3F4F6;
-    --sidebar-border: #374151;
-    --sidebar-ring: #3B82F6;
-
-    /* Callout Block - Dark Mode */
-    --callout-bg: #374151;
-    --callout-border: #6B7280;
-
-    /* Table styling - Dark Mode */
-    --table-header-bg: rgba(156, 163, 175, 0.2);
-
-    /* Code block styling - Dark Mode */
-    --code-bg: #1E1E1E;
-
-    /* Highlight Menu - Dark Mode */
-    --highlight-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-
-    /* Rephrase Preview Dialog - Dark Mode */
-    --preview-original-bg: #1f2937;
-    --preview-rephrased-bg: #064e3b;
-
-    /* Summarize Preview Dialog - Dark Mode */
-    --preview-summary-bg: #1e3a5f;      /* Dark blue for dark mode */
-    --preview-summary-border: #60a5fa;  /* Lighter blue border for dark mode */
-
-    /* Grammar Fix Preview Dialog - Dark Mode */
-    --preview-corrected-bg: #450a0a;    /* Dark red for dark mode */
-    --preview-corrected-border: #f87171; /* Lighter red border for dark mode */
-
-    /* Outline Drawer - Dark Mode */
-    --outline-heading-active-bg: rgba(59, 130, 246, 0.15);
-  }
-}
-
-/* Manual dark mode class (for theme switcher) */
+/* Dark mode class (for theme switcher) */
 .dark {
   /* Colors - Dark Theme */
   --background: #1A1A1A;
@@ -335,6 +285,9 @@
 
   /* Outline Drawer - Dark Mode */
   --outline-heading-active-bg: rgba(59, 130, 246, 0.15);
+
+  /* Tab Colors - Dark Mode */
+  --tab-hover-bg: rgba(59, 130, 246, 0.1);
 }
 
 @layer base {
@@ -991,5 +944,45 @@ html, body {
 @media (max-width: 768px) {
   .outline-drawer-toggle {
     display: none;
+  }
+}
+
+/* Scrollbar Hide Utility */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab Bar Additional Styles */
+.tab-bar {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab Item Focus Styles */
+.tab-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Tab Close Button Focus Styles */
+.tab-close-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Hide tab bar on mobile */
+@media (max-width: 768px) {
+  .tab-bar {
+    display: none !important;
   }
 }

@@ -84,20 +84,47 @@ export async function PATCH(
     const body = await request.json();
     const { title, content } = updateNoteSchema.parse(body);
 
-    // Verify note exists and user has access
-    const existingNote = await prisma.note.findFirst({
-      where: {
-        id,
+    // Verify note exists
+    const existingNote = await prisma.note.findUnique({
+      where: { id },
+      include: {
         folio: {
-          ownerId: session.user.id,
+          select: { ownerId: true },
+        },
+        published: {
+          select: { id: true },
         },
       },
     });
 
     if (!existingNote) {
       return NextResponse.json(
-        { error: 'Note not found or access denied' },
+        { error: 'Note not found' },
         { status: 404 }
+      );
+    }
+
+    // Check if user is owner
+    const isOwner = existingNote.folio.ownerId === session.user.id;
+
+    // Check if user is a collaborator with editor role
+    let isCollaborator = false;
+    if (!isOwner && existingNote.published) {
+      const collaborator = await prisma.pageCollaborator.findFirst({
+        where: {
+          pageId: existingNote.published.id,
+          userId: session.user.id,
+          role: 'editor',
+        },
+      });
+      isCollaborator = !!collaborator;
+    }
+
+    // Deny access if user is neither owner nor editor
+    if (!isOwner && !isCollaborator) {
+      return NextResponse.json(
+        { error: 'Access denied' },
+        { status: 403 }
       );
     }
 
