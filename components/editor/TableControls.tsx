@@ -22,25 +22,22 @@ export function TableControls({ editor }: TableControlsProps) {
   const [hoveredTable, setHoveredTable] = useState<HTMLElement | null>(null);
   const [rowButtons, setRowButtons] = useState<ButtonPosition[]>([]);
   const [colButtons, setColButtons] = useState<ButtonPosition[]>([]);
-  const [tableRect, setTableRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     const editorElement = editor.view.dom;
     let rafId: number | null = null;
+    let isHovering = false;
 
     const updateButtonPositions = (table: HTMLElement) => {
       const rows = Array.from(table.querySelectorAll('tr'));
-      const rect = table.getBoundingClientRect();
-      const editorRect = editorElement.getBoundingClientRect();
-
-      setTableRect(rect);
+      const tableRect = table.getBoundingClientRect();
 
       // Calculate row button positions (right side of table)
       const rowPositions = rows.map(row => {
         const rowRect = row.getBoundingClientRect();
         return {
-          top: rowRect.top - editorRect.top + rowRect.height / 2,
-          left: rect.right - editorRect.left + 8,
+          top: rowRect.top + rowRect.height / 2,
+          left: tableRect.right + 8,
         };
       });
       setRowButtons(rowPositions);
@@ -52,19 +49,20 @@ export function TableControls({ editor }: TableControlsProps) {
         const colPositions = cells.map(cell => {
           const cellRect = cell.getBoundingClientRect();
           return {
-            top: rect.bottom - editorRect.top + 8,
-            left: cellRect.left - editorRect.left + cellRect.width / 2,
+            top: tableRect.bottom + 8,
+            left: cellRect.left + cellRect.width / 2,
           };
         });
         setColButtons(colPositions);
       }
     };
 
-    const handleMouseOver = (e: MouseEvent) => {
+    const handleMouseEnter = (e: Event) => {
       const target = e.target as HTMLElement;
       const table = target.closest('table');
 
-      if (table && editor.isEditable && table !== hoveredTable) {
+      if (table && editor.isEditable) {
+        isHovering = true;
         setHoveredTable(table);
 
         if (rafId !== null) {
@@ -77,30 +75,61 @@ export function TableControls({ editor }: TableControlsProps) {
       }
     };
 
-    const handleMouseLeave = (e: MouseEvent) => {
+    const handleMouseLeave = (e: Event) => {
       const target = e.target as HTMLElement;
+      const relatedTarget = (e as MouseEvent).relatedTarget as HTMLElement;
 
-      // Check if we're leaving the table entirely
-      if (!target.closest('table')) {
-        setHoveredTable(null);
-        setRowButtons([]);
-        setColButtons([]);
-        setTableRect(null);
+      // Check if we're leaving to a button or staying in table
+      const leavingToButton = relatedTarget?.closest('.table-control-button');
+      const stayingInTable = relatedTarget?.closest('table') === target.closest('table');
+
+      if (!leavingToButton && !stayingInTable) {
+        isHovering = false;
+        setTimeout(() => {
+          if (!isHovering) {
+            setHoveredTable(null);
+            setRowButtons([]);
+            setColButtons([]);
+          }
+        }, 100);
       }
     };
 
-    editorElement.addEventListener('mouseover', handleMouseOver, true);
-    editorElement.addEventListener('mouseleave', handleMouseLeave, true);
+    // Find all tables and attach listeners
+    const tables = editorElement.querySelectorAll('table');
+    tables.forEach(table => {
+      table.addEventListener('mouseenter', handleMouseEnter);
+      table.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    // Use MutationObserver to handle dynamically added tables
+    const observer = new MutationObserver(() => {
+      const newTables = editorElement.querySelectorAll('table');
+      newTables.forEach(table => {
+        table.removeEventListener('mouseenter', handleMouseEnter);
+        table.removeEventListener('mouseleave', handleMouseLeave);
+        table.addEventListener('mouseenter', handleMouseEnter);
+        table.addEventListener('mouseleave', handleMouseLeave);
+      });
+    });
+
+    observer.observe(editorElement, {
+      childList: true,
+      subtree: true,
+    });
 
     return () => {
-      editorElement.removeEventListener('mouseover', handleMouseOver, true);
-      editorElement.removeEventListener('mouseleave', handleMouseLeave, true);
+      tables.forEach(table => {
+        table.removeEventListener('mouseenter', handleMouseEnter);
+        table.removeEventListener('mouseleave', handleMouseLeave);
+      });
+      observer.disconnect();
 
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
     };
-  }, [editor, hoveredTable]);
+  }, [editor]);
 
   const addRowAfter = (rowIndex: number) => {
     if (!hoveredTable) return;
@@ -119,6 +148,22 @@ export function TableControls({ editor }: TableControlsProps) {
         .setTextSelection(pos)
         .addRowAfter()
         .run();
+
+      // Update button positions after adding row
+      setTimeout(() => {
+        if (hoveredTable) {
+          const rows = Array.from(hoveredTable.querySelectorAll('tr'));
+          const tableRect = hoveredTable.getBoundingClientRect();
+          const rowPositions = rows.map(row => {
+            const rowRect = row.getBoundingClientRect();
+            return {
+              top: rowRect.top + rowRect.height / 2,
+              left: tableRect.right + 8,
+            };
+          });
+          setRowButtons(rowPositions);
+        }
+      }, 50);
     }
   };
 
@@ -138,24 +183,44 @@ export function TableControls({ editor }: TableControlsProps) {
         .setTextSelection(pos)
         .addColumnAfter()
         .run();
+
+      // Update button positions after adding column
+      setTimeout(() => {
+        if (hoveredTable) {
+          const firstRow = hoveredTable.querySelector('tr');
+          if (firstRow) {
+            const cells = Array.from(firstRow.querySelectorAll('th, td'));
+            const tableRect = hoveredTable.getBoundingClientRect();
+            const colPositions = cells.map(cell => {
+              const cellRect = cell.getBoundingClientRect();
+              return {
+                top: tableRect.bottom + 8,
+                left: cellRect.left + cellRect.width / 2,
+              };
+            });
+            setColButtons(colPositions);
+          }
+        }
+      }, 50);
     }
   };
 
-  if (!hoveredTable || !tableRect) return null;
+  if (!hoveredTable) return null;
 
   return (
-    <div className="table-controls pointer-events-none">
+    <>
       {/* Row add buttons - right side of table */}
       {rowButtons.map((button, index) => (
         <button
           key={`row-${index}`}
           className={cn(
-            'absolute z-50 flex items-center justify-center pointer-events-auto',
+            'table-control-button',
+            'fixed z-50 flex items-center justify-center',
             'w-6 h-6 rounded-full',
             'bg-accent text-accent-foreground',
             'hover:bg-accent/90 hover:scale-110',
             'transition-all duration-150',
-            'shadow-md border border-border',
+            'shadow-lg border border-border',
             'cursor-pointer'
           )}
           style={{
@@ -176,12 +241,13 @@ export function TableControls({ editor }: TableControlsProps) {
         <button
           key={`col-${index}`}
           className={cn(
-            'absolute z-50 flex items-center justify-center pointer-events-auto',
+            'table-control-button',
+            'fixed z-50 flex items-center justify-center',
             'w-6 h-6 rounded-full',
             'bg-accent text-accent-foreground',
             'hover:bg-accent/90 hover:scale-110',
             'transition-all duration-150',
-            'shadow-md border border-border',
+            'shadow-lg border border-border',
             'cursor-pointer'
           )}
           style={{
@@ -196,6 +262,6 @@ export function TableControls({ editor }: TableControlsProps) {
           <Plus className="w-3.5 h-3.5" />
         </button>
       ))}
-    </div>
+    </>
   );
 }
