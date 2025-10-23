@@ -3,9 +3,10 @@
 > A modern, privacy-focused portfolio and note-taking application with AI-powered features
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-5-2D3748)](https://www.prisma.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)](https://www.prisma.io/)
 
 ---
 
@@ -28,7 +29,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. **That's it
 ## ✨ Features
 
 ### Core Features
-- **📝 Rich Text Editor** - BlockNote-based editor with Markdown support
+- **📝 Rich Text Editor** - Tiptap-based editor with tables, code blocks, and more
 - **🗂️ Vault Organization** - Organize notes into secure, isolated vaults
 - **🔐 User Authentication** - Secure authentication with NextAuth v5
 - **👥 Collaboration** - Share vaults with view-only or full access permissions
@@ -251,17 +252,19 @@ docker compose -f docker-compose.prod.yml up -d --build
 ## 🏗️ Tech Stack
 
 ### Frontend
-- **[Next.js 14](https://nextjs.org/)** - React framework with App Router
-- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
-- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS
-- **[shadcn/ui](https://ui.shadcn.com/)** - Re-usable UI components
-- **[BlockNote](https://www.blocknotejs.org/)** - Rich text editor
+- **[Next.js 15](https://nextjs.org/)** - React framework with App Router & Turbopack
+- **[React 19](https://react.dev/)** - Latest React with new features
+- **[TypeScript 5](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[Tailwind CSS 4](https://tailwindcss.com/)** - Utility-first CSS (v4 beta)
+- **[shadcn/ui](https://ui.shadcn.com/)** - Re-usable UI components (Radix UI)
+- **[Tiptap](https://tiptap.dev/)** - Powerful rich text editor with extensions
+- **[Zustand](https://zustand-demo.pmnd.rs/)** - Lightweight state management
 
 ### Backend
 - **[Next.js API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)** - Serverless API
-- **[Prisma](https://www.prisma.io/)** - Type-safe ORM
-- **[PostgreSQL](https://www.postgresql.org/)** - Relational database
-- **[NextAuth v5](https://authjs.dev/)** - Authentication
+- **[Prisma 6](https://www.prisma.io/)** - Type-safe ORM
+- **[PostgreSQL 16](https://www.postgresql.org/)** - Relational database
+- **[NextAuth v5](https://authjs.dev/)** - Authentication (beta)
 
 ### AI & Services
 - **[Scaleway AI](https://www.scaleway.com/en/ai/)** - EU-based AI inference (GDPR compliant)
@@ -423,10 +426,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Built with [Next.js](https://nextjs.org/)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
-- Editor powered by [BlockNote](https://www.blocknotejs.org/)
-- Authentication by [NextAuth](https://authjs.dev/)
+- Built with [Next.js 15](https://nextjs.org/) & [React 19](https://react.dev/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/) & [Radix UI](https://www.radix-ui.com/)
+- Editor powered by [Tiptap](https://tiptap.dev/)
+- Authentication by [NextAuth v5](https://authjs.dev/)
 - Infrastructure by [Scaleway](https://www.scaleway.com/) (EU GDPR-compliant)
 
 ---
