@@ -2,115 +2,180 @@
 
 import { Editor } from '@tiptap/react';
 import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
 interface TableControlsProps {
   editor: Editor;
 }
 
-interface ButtonPosition {
-  top: number;
-  left: number;
-}
-
 /**
- * TableControls component adds hover UI for inserting rows and columns
- * Shows plus icons at the end of rows and bottom of columns when hovering over tables
+ * TableControls component adds Notion-style hover controls for inserting rows and columns
+ * Shows small + buttons when hovering near the edges of table cells
  */
 export function TableControls({ editor }: TableControlsProps) {
-  const [hoveredTable, setHoveredTable] = useState<HTMLElement | null>(null);
-  const [rowButtons, setRowButtons] = useState<ButtonPosition[]>([]);
-  const [colButtons, setColButtons] = useState<ButtonPosition[]>([]);
-
   useEffect(() => {
+    if (!editor || !editor.isEditable) return;
+
     const editorElement = editor.view.dom;
-    let rafId: number | null = null;
-    let isHovering = false;
 
-    const updateButtonPositions = (table: HTMLElement) => {
-      const rows = Array.from(table.querySelectorAll('tr'));
-      const tableRect = table.getBoundingClientRect();
-
-      // Calculate row button positions (right side of table)
-      const rowPositions = rows.map(row => {
-        const rowRect = row.getBoundingClientRect();
-        return {
-          top: rowRect.top + rowRect.height / 2,
-          left: tableRect.right + 8,
-        };
-      });
-      setRowButtons(rowPositions);
-
-      // Calculate column button positions (bottom of table)
-      if (rows.length > 0) {
-        const firstRow = rows[0];
-        const cells = Array.from(firstRow.querySelectorAll('th, td'));
-        const colPositions = cells.map(cell => {
-          const cellRect = cell.getBoundingClientRect();
-          return {
-            top: tableRect.bottom + 8,
-            left: cellRect.left + cellRect.width / 2,
-          };
-        });
-        setColButtons(colPositions);
-      }
-    };
-
-    const handleMouseEnter = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const table = target.closest('table');
-
-      if (table && editor.isEditable) {
-        isHovering = true;
-        setHoveredTable(table);
-
-        if (rafId !== null) {
-          cancelAnimationFrame(rafId);
+    // Add styles for the table controls
+    const styleId = 'table-controls-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        /* Hide controls by default */
+        .table-add-row-btn,
+        .table-add-col-btn {
+          display: none;
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          background: var(--accent);
+          color: var(--accent-foreground);
+          border: 1px solid var(--border);
+          cursor: pointer;
+          z-index: 10;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          transition: all 0.15s ease;
         }
 
-        rafId = requestAnimationFrame(() => {
-          updateButtonPositions(table);
+        .table-add-row-btn:hover,
+        .table-add-col-btn:hover {
+          background: var(--accent);
+          transform: scale(1.1);
+        }
+
+        .table-add-row-btn svg,
+        .table-add-col-btn svg {
+          width: 14px;
+          height: 14px;
+        }
+
+        /* Show row button when hovering over rows */
+        tr:hover .table-add-row-btn {
+          display: flex;
+        }
+
+        /* Show column button when hovering over header cells */
+        th:hover .table-add-col-btn,
+        td:hover .table-add-col-btn {
+          display: flex;
+        }
+
+        /* Position row buttons */
+        tr {
+          position: relative;
+        }
+
+        .table-add-row-btn {
+          right: -32px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+
+        .table-add-row-btn:hover {
+          transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Position column buttons */
+        th, td {
+          position: relative;
+        }
+
+        .table-add-col-btn {
+          right: -12px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+
+        .table-add-col-btn:hover {
+          transform: translateY(-50%) scale(1.1);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Function to add controls to table
+    const addControlsToTable = (table: HTMLTableElement) => {
+      // Remove existing controls first
+      table.querySelectorAll('.table-add-row-btn, .table-add-col-btn').forEach(btn => btn.remove());
+
+      // Add row buttons
+      const rows = table.querySelectorAll('tr');
+      rows.forEach((row, rowIndex) => {
+        const existingBtn = row.querySelector('.table-add-row-btn');
+        if (!existingBtn) {
+          const btn = document.createElement('button');
+          btn.className = 'table-add-row-btn';
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+          btn.title = 'Add row below';
+          btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Find a cell in this row to set selection
+            const cells = row.querySelectorAll('th, td');
+            const lastCell = cells[cells.length - 1];
+
+            if (lastCell) {
+              const pos = editor.view.posAtDOM(lastCell, 0);
+              editor.chain()
+                .focus()
+                .setTextSelection(pos)
+                .addRowAfter()
+                .run();
+            }
+          };
+          row.appendChild(btn);
+        }
+      });
+
+      // Add column buttons to first row cells
+      const firstRow = table.querySelector('tr');
+      if (firstRow) {
+        const cells = firstRow.querySelectorAll('th, td');
+        cells.forEach((cell, colIndex) => {
+          const existingBtn = cell.querySelector('.table-add-col-btn');
+          if (!existingBtn) {
+            const btn = document.createElement('button');
+            btn.className = 'table-add-col-btn';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+            btn.title = 'Add column to the right';
+            btn.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              const pos = editor.view.posAtDOM(cell, 0);
+              editor.chain()
+                .focus()
+                .setTextSelection(pos)
+                .addColumnAfter()
+                .run();
+            };
+            cell.appendChild(btn);
+          }
         });
       }
     };
 
-    const handleMouseLeave = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const relatedTarget = (e as MouseEvent).relatedTarget as HTMLElement;
-
-      // Check if we're leaving to a button or staying in table
-      const leavingToButton = relatedTarget?.closest('.table-control-button');
-      const stayingInTable = relatedTarget?.closest('table') === target.closest('table');
-
-      if (!leavingToButton && !stayingInTable) {
-        isHovering = false;
-        setTimeout(() => {
-          if (!isHovering) {
-            setHoveredTable(null);
-            setRowButtons([]);
-            setColButtons([]);
-          }
-        }, 100);
-      }
+    // Function to update all tables
+    const updateAllTables = () => {
+      const tables = editorElement.querySelectorAll('table');
+      tables.forEach((table) => {
+        addControlsToTable(table as HTMLTableElement);
+      });
     };
 
-    // Find all tables and attach listeners
-    const tables = editorElement.querySelectorAll('table');
-    tables.forEach(table => {
-      table.addEventListener('mouseenter', handleMouseEnter);
-      table.addEventListener('mouseleave', handleMouseLeave);
-    });
+    // Initial update
+    updateAllTables();
 
-    // Use MutationObserver to handle dynamically added tables
+    // Watch for table changes
     const observer = new MutationObserver(() => {
-      const newTables = editorElement.querySelectorAll('table');
-      newTables.forEach(table => {
-        table.removeEventListener('mouseenter', handleMouseEnter);
-        table.removeEventListener('mouseleave', handleMouseLeave);
-        table.addEventListener('mouseenter', handleMouseEnter);
-        table.addEventListener('mouseleave', handleMouseLeave);
-      });
+      updateAllTables();
     });
 
     observer.observe(editorElement, {
@@ -119,149 +184,11 @@ export function TableControls({ editor }: TableControlsProps) {
     });
 
     return () => {
-      tables.forEach(table => {
-        table.removeEventListener('mouseenter', handleMouseEnter);
-        table.removeEventListener('mouseleave', handleMouseLeave);
-      });
       observer.disconnect();
-
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
+      // Clean up controls
+      editorElement.querySelectorAll('.table-add-row-btn, .table-add-col-btn').forEach(btn => btn.remove());
     };
   }, [editor]);
 
-  const addRowAfter = (rowIndex: number) => {
-    if (!hoveredTable) return;
-
-    const rows = hoveredTable.querySelectorAll('tr');
-    const targetRow = rows[rowIndex];
-    if (!targetRow) return;
-
-    const cells = targetRow.querySelectorAll('th, td');
-    const lastCell = cells[cells.length - 1];
-
-    if (lastCell) {
-      const pos = editor.view.posAtDOM(lastCell, 0);
-      editor.chain()
-        .focus()
-        .setTextSelection(pos)
-        .addRowAfter()
-        .run();
-
-      // Update button positions after adding row
-      setTimeout(() => {
-        if (hoveredTable) {
-          const rows = Array.from(hoveredTable.querySelectorAll('tr'));
-          const tableRect = hoveredTable.getBoundingClientRect();
-          const rowPositions = rows.map(row => {
-            const rowRect = row.getBoundingClientRect();
-            return {
-              top: rowRect.top + rowRect.height / 2,
-              left: tableRect.right + 8,
-            };
-          });
-          setRowButtons(rowPositions);
-        }
-      }, 50);
-    }
-  };
-
-  const addColumnAfter = (colIndex: number) => {
-    if (!hoveredTable) return;
-
-    const firstRow = hoveredTable.querySelector('tr');
-    if (!firstRow) return;
-
-    const cells = firstRow.querySelectorAll('th, td');
-    const targetCell = cells[colIndex];
-
-    if (targetCell) {
-      const pos = editor.view.posAtDOM(targetCell, 0);
-      editor.chain()
-        .focus()
-        .setTextSelection(pos)
-        .addColumnAfter()
-        .run();
-
-      // Update button positions after adding column
-      setTimeout(() => {
-        if (hoveredTable) {
-          const firstRow = hoveredTable.querySelector('tr');
-          if (firstRow) {
-            const cells = Array.from(firstRow.querySelectorAll('th, td'));
-            const tableRect = hoveredTable.getBoundingClientRect();
-            const colPositions = cells.map(cell => {
-              const cellRect = cell.getBoundingClientRect();
-              return {
-                top: tableRect.bottom + 8,
-                left: cellRect.left + cellRect.width / 2,
-              };
-            });
-            setColButtons(colPositions);
-          }
-        }
-      }, 50);
-    }
-  };
-
-  if (!hoveredTable) return null;
-
-  return (
-    <>
-      {/* Row add buttons - right side of table */}
-      {rowButtons.map((button, index) => (
-        <button
-          key={`row-${index}`}
-          className={cn(
-            'table-control-button',
-            'fixed z-50 flex items-center justify-center',
-            'w-6 h-6 rounded-full',
-            'bg-accent text-accent-foreground',
-            'hover:bg-accent/90 hover:scale-110',
-            'transition-all duration-150',
-            'shadow-lg border border-border',
-            'cursor-pointer'
-          )}
-          style={{
-            top: `${button.top}px`,
-            left: `${button.left}px`,
-            transform: 'translateY(-50%)',
-          }}
-          onClick={() => addRowAfter(index)}
-          onMouseDown={(e) => e.preventDefault()}
-          title="Add row below"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-      ))}
-
-      {/* Column add buttons - bottom of table */}
-      {colButtons.map((button, index) => (
-        <button
-          key={`col-${index}`}
-          className={cn(
-            'table-control-button',
-            'fixed z-50 flex items-center justify-center',
-            'w-6 h-6 rounded-full',
-            'bg-accent text-accent-foreground',
-            'hover:bg-accent/90 hover:scale-110',
-            'transition-all duration-150',
-            'shadow-lg border border-border',
-            'cursor-pointer'
-          )}
-          style={{
-            top: `${button.top}px`,
-            left: `${button.left}px`,
-            transform: 'translateX(-50%)',
-          }}
-          onClick={() => addColumnAfter(index)}
-          onMouseDown={(e) => e.preventDefault()}
-          title="Add column to the right"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-      ))}
-    </>
-  );
+  return null; // This component doesn't render anything itself
 }

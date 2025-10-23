@@ -71,8 +71,8 @@ export function EditorView({ className, note }: EditorViewProps) {
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
 
-  // Tab management
-  const openTabs = useFoliosStore((state) => state.openTabs);
+  // Tab management - filter tabs to only show current folio's tabs
+  const openTabs = useFoliosStore((state) => state.getTabsForCurrentFolio());
   const closeTab = useFoliosStore((state) => state.closeTab);
   const closeAllTabs = useFoliosStore((state) => state.closeAllTabs);
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);

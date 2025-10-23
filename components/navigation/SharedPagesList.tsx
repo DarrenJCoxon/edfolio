@@ -61,7 +61,7 @@ export function SharedPagesList() {
     setActiveFolio(folioId);
     // Open the shared note in the editor
     setActiveNote(noteId);
-    openTab(noteId, title);
+    openTab(noteId, title, folioId);
   };
 
   if (isLoading) {

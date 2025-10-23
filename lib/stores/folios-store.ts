@@ -4,6 +4,7 @@ import { Folio, Folder, Note } from '@/types';
 interface Tab {
   noteId: string;
   title: string;
+  folioId: string;
 }
 
 // Cache entry for note content
@@ -52,7 +53,7 @@ interface FoliosState {
   setSelectedFolder: (id: string | null) => void;
 
   // Tab actions
-  openTab: (noteId: string, title: string) => void;
+  openTab: (noteId: string, title: string, folioId: string) => void;
   closeTab: (noteId: string) => void;
   closeAllTabs: () => void;
   updateTabTitle: (noteId: string, newTitle: string) => void;
@@ -76,6 +77,7 @@ interface FoliosState {
   getFoldersByFolio: (folioId: string) => Folder[];
   getNotesByFolder: (folderId: string | null, folioId: string) => Note[];
   getRootFolders: (folioId: string) => Folder[];
+  getTabsForCurrentFolio: () => Tab[];
 }
 
 // Helper to load tabs from localStorage
@@ -252,7 +254,7 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   setSelectedFolder: (id) => set({ selectedFolderId: id }),
 
   // Tab actions
-  openTab: (noteId, title) => {
+  openTab: (noteId, title, folioId) => {
     const state = get();
     const existingTabIndex = state.openTabs.findIndex((t) => t.noteId === noteId);
 
@@ -263,7 +265,7 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
     }
 
     // Create new tab
-    let newTabs = [...state.openTabs, { noteId, title }];
+    let newTabs = [...state.openTabs, { noteId, title, folioId }];
 
     // If exceeds max, remove oldest tab (first in array)
     if (newTabs.length > state.MAX_TABS) {
@@ -392,5 +394,11 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
     return state.folders.filter(
       (f) => f.folioId === folioId && f.parentId === null
     );
+  },
+
+  getTabsForCurrentFolio: () => {
+    const state = get();
+    if (!state.activeFolioId) return [];
+    return state.openTabs.filter((tab) => tab.folioId === state.activeFolioId);
   },
 }));

@@ -52,7 +52,7 @@ export function SharedDocumentContextMenu({
     setActiveFolio(folioId);
     // Open the shared document in the editor
     setActiveNote(noteId);
-    openTab(noteId, pageTitle);
+    openTab(noteId, pageTitle, folioId);
   };
 
   const handleClone = async () => {
