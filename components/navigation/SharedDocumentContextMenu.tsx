@@ -27,6 +27,7 @@ interface SharedDocumentContextMenuProps {
   noteId: string;
   pageTitle: string;
   slug: string;
+  folioId: string;
   onRemove?: () => void;
 }
 
@@ -34,6 +35,7 @@ export function SharedDocumentContextMenu({
   noteId,
   pageTitle,
   slug,
+  folioId,
   onRemove,
 }: SharedDocumentContextMenuProps) {
   const router = useRouter();
@@ -42,10 +44,13 @@ export function SharedDocumentContextMenu({
 
   // Access store functions to open notes in editor
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
+  const setActiveFolio = useFoliosStore((state) => state.setActiveFolio);
   const openTab = useFoliosStore((state) => state.openTab);
 
   const handleOpen = () => {
-    // Open the shared document in the editor (same as clicking the file name)
+    // Switch to the owner's folio so the note data is available
+    setActiveFolio(folioId);
+    // Open the shared document in the editor
     setActiveNote(noteId);
     openTab(noteId, pageTitle);
   };
