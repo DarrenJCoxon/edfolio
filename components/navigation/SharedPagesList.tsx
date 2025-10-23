@@ -27,6 +27,7 @@ export function SharedPagesList() {
   // Access store functions to open notes in editor
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
   const openTab = useFoliosStore((state) => state.openTab);
+  const notes = useFoliosStore((state) => state.notes);
 
   useEffect(() => {
     fetchSharedPages();
@@ -55,8 +56,12 @@ export function SharedPagesList() {
 
   const handlePageClick = (noteId: string, title: string) => {
     // Open the shared note in the editor (same as regular notes)
-    setActiveNote(noteId);
-    openTab(noteId, title);
+    // Find the note to get its folioId
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      setActiveNote(noteId);
+      openTab(noteId, title, note.folioId);
+    }
   };
 
   if (isLoading) {

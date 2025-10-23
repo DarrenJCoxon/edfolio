@@ -43,11 +43,16 @@ export function SharedDocumentContextMenu({
   // Access store functions to open notes in editor
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
   const openTab = useFoliosStore((state) => state.openTab);
+  const notes = useFoliosStore((state) => state.notes);
 
   const handleOpen = () => {
     // Open the shared document in the editor (same as clicking the file name)
-    setActiveNote(noteId);
-    openTab(noteId, pageTitle);
+    // Find the note to get its folioId
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      setActiveNote(noteId);
+      openTab(noteId, pageTitle, note.folioId);
+    }
   };
 
   const handleClone = async () => {

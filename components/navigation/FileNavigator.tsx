@@ -59,7 +59,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       setActiveNote(noteId);
-      openTab(noteId, note.title);
+      openTab(noteId, note.title, note.folioId);
     }
   };
 
