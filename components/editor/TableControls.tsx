@@ -24,20 +24,9 @@ export function TableControls({ editor }: TableControlsProps) {
       const tables = editorElement.querySelectorAll('table');
 
       tables.forEach((table) => {
-        // Skip if already has controls
-        if (table.querySelector('.table-controls-wrapper')) return;
-
-        // Wrap table for positioning context
-        if (!table.parentElement?.classList.contains('table-wrapper')) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'table-wrapper';
-          table.parentNode?.insertBefore(wrapper, table);
-          wrapper.appendChild(table);
-        }
-
-        // Add row add buttons
+        // Add row add buttons (skip if already exists)
         const rows = table.querySelectorAll('tr');
-        rows.forEach((row, index) => {
+        rows.forEach((row) => {
           if (!row.querySelector('.table-row-add')) {
             const btn = document.createElement('button');
             btn.className = 'table-row-add';
@@ -61,7 +50,7 @@ export function TableControls({ editor }: TableControlsProps) {
           }
         });
 
-        // Add column add buttons to header row
+        // Add column add buttons to header row (skip if already exists)
         const headerRow = table.querySelector('tr');
         if (headerRow) {
           const cells = headerRow.querySelectorAll('th, td');
