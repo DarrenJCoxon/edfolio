@@ -175,9 +175,7 @@ export function SlashCommandMenu({
             'z-50 overflow-y-auto',
             'w-[calc(100vw-2rem)] max-w-xs sm:w-80',
             'bg-[var(--card)] rounded-lg border border-[var(--border)] shadow-lg',
-            'p-[var(--spacing-xs)]',
-            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
-            'transition-opacity transition-transform duration-200'
+            'p-[var(--spacing-xs)]'
           )}
           {...getFloatingProps()}
         >
