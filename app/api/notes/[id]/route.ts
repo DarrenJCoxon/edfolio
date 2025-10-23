@@ -25,19 +25,22 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch note and verify ownership
-    const note = await prisma.note.findFirst({
-      where: {
-        id,
-        folio: {
-          ownerId: session.user.id,
-        },
-      },
+    // Fetch note with all necessary relations
+    const note = await prisma.note.findUnique({
+      where: { id },
       include: {
         folio: {
           select: {
             id: true,
             name: true,
+            ownerId: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         folder: {
@@ -46,17 +49,56 @@ export async function GET(
             name: true,
           },
         },
+        published: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
     if (!note) {
+      return NextResponse.json(
+        { error: 'Note not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if user is owner
+    const isOwner = note.folio.ownerId === session.user.id;
+
+    // Check if user is a collaborator (viewer or editor)
+    let collaboratorRole: string | null = null;
+    if (!isOwner && note.published) {
+      const collaborator = await prisma.pageCollaborator.findFirst({
+        where: {
+          pageId: note.published.id,
+          userId: session.user.id,
+        },
+        select: {
+          role: true,
+        },
+      });
+      collaboratorRole = collaborator?.role || null;
+    }
+
+    // Deny access if user is neither owner nor collaborator
+    if (!isOwner && !collaboratorRole) {
       return NextResponse.json(
         { error: 'Note not found or access denied' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ data: note });
+    // Return note data with access metadata
+    return NextResponse.json({
+      data: note,
+      meta: {
+        isOwner,
+        collaboratorRole,
+        canEdit: isOwner || collaboratorRole === 'editor',
+      }
+    });
   } catch (error) {
     console.error('Error fetching note:', error);
     return NextResponse.json(

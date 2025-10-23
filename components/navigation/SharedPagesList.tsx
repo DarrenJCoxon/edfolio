@@ -20,10 +20,13 @@ interface SharedPage {
 }
 
 export function SharedPagesList() {
-  const { setActiveNote, openTab } = useFoliosStore();
   const [sharedPages, setSharedPages] = useState<SharedPage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Access store functions to open notes in editor
+  const setActiveNote = useFoliosStore((state) => state.setActiveNote);
+  const openTab = useFoliosStore((state) => state.openTab);
 
   useEffect(() => {
     fetchSharedPages();
@@ -50,10 +53,10 @@ export function SharedPagesList() {
     }
   };
 
-  const handlePageClick = (noteId: string, pageTitle: string) => {
-    // Open the shared document in the editor
+  const handlePageClick = (noteId: string, title: string) => {
+    // Open the shared note in the editor (same as regular notes)
     setActiveNote(noteId);
-    openTab(noteId, pageTitle);
+    openTab(noteId, title);
   };
 
   if (isLoading) {
