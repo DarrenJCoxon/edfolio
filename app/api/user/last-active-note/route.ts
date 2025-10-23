@@ -65,7 +65,10 @@ export async function PATCH(request: NextRequest) {
     if (noteId) {
       const note = await prisma.note.findUnique({
         where: { id: noteId },
-        include: { folio: true },
+        include: {
+          folio: true,
+          published: { select: { id: true } }
+        },
       });
 
       if (!note) {
@@ -75,7 +78,23 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      if (note.folio.ownerId !== session.user.id) {
+      // Check if user is owner
+      const isOwner = note.folio.ownerId === session.user.id;
+
+      // Check if user is collaborator (has access to shared note)
+      let isCollaborator = false;
+      if (!isOwner && note.published) {
+        const collaborator = await prisma.pageCollaborator.findFirst({
+          where: {
+            pageId: note.published.id,
+            userId: session.user.id,
+          },
+        });
+        isCollaborator = !!collaborator;
+      }
+
+      // Deny access if user is neither owner nor collaborator
+      if (!isOwner && !isCollaborator) {
         return NextResponse.json(
           { error: 'Access denied' },
           { status: 403 }
