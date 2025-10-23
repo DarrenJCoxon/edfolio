@@ -51,14 +51,15 @@ export function detectActiveHeading(
  *
  * @param headingPosition - Document position of the heading
  * @param scrollContainer - The scrollable container element
- * @param offset - Offset from top in pixels (default: 16px for breathing room)
+ * @param offset - Offset from top in pixels (default: 80px for proper top alignment)
  */
 export function scrollToHeadingPosition(
   headingPosition: number,
   scrollContainer: Element,
-  offset: number = 16
+  offset: number = 80
 ): void {
   // Scroll to the heading position with smooth behavior
+  // The offset ensures the heading appears at the top of the viewport with comfortable spacing
   scrollContainer.scrollTo({
     top: headingPosition - offset,
     behavior: 'smooth'
