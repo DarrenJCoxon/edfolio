@@ -177,7 +177,7 @@ export function SlashCommandMenu({
             'bg-[var(--card)] rounded-lg border border-[var(--border)] shadow-lg',
             'p-[var(--spacing-xs)]',
             mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
-            'transition-all duration-200'
+            'transition-opacity transition-transform duration-200'
           )}
           {...getFloatingProps()}
         >
