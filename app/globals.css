@@ -994,3 +994,58 @@ html, body {
     display: none !important;
   }
 }
+
+/* ============================================
+   Table Controls - Notion-Style
+   ============================================ */
+
+/* Table base styling */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: var(--spacing-lg) 0;
+  overflow: hidden;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  min-width: 1em;
+  border: 2px solid var(--border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.ProseMirror table th {
+  font-weight: bold;
+  text-align: left;
+  background-color: var(--muted);
+}
+
+.ProseMirror table .selectedCell {
+  background-color: var(--accent);
+  opacity: 0.1;
+}
+
+/* Table row controls */
+.ProseMirror table tr {
+  position: relative;
+}
+
+/* Column resize handle (built into Tiptap) */
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 20;
+  background-color: var(--accent);
+  pointer-events: none;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
