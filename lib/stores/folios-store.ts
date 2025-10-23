@@ -6,6 +6,12 @@ interface Tab {
   title: string;
 }
 
+// Cache entry for note content
+interface NoteContentCache {
+  content: unknown;
+  timestamp: number;
+}
+
 interface FoliosState {
   folios: Folio[];
   folders: Folder[];
@@ -19,6 +25,9 @@ interface FoliosState {
   focusedItemType: 'folio' | 'folder' | 'note' | null;
   openTabs: Tab[];
   MAX_TABS: number;
+
+  // Note content cache for instant tab switching
+  noteContentCache: Map<string, NoteContentCache>;
 
   // Folio actions
   setFolios: (folios: Folio[]) => void;
@@ -48,6 +57,12 @@ interface FoliosState {
   closeAllTabs: () => void;
   updateTabTitle: (noteId: string, newTitle: string) => void;
   reorderTabs: (fromIndex: number, toIndex: number) => void;
+
+  // Note content cache actions
+  cacheNoteContent: (noteId: string, content: unknown) => void;
+  getCachedNoteContent: (noteId: string) => unknown | null;
+  clearNoteContentCache: () => void;
+  removeCachedNote: (noteId: string) => void;
 
   // Sidebar actions
   toggleSidebar: () => void;
@@ -101,6 +116,7 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   focusedItemType: null,
   openTabs: typeof window !== 'undefined' ? loadTabsFromStorage() : [],
   MAX_TABS: 10,
+  noteContentCache: new Map<string, NoteContentCache>(),
 
   // Folio actions
   setFolios: (folios) => set({ folios }),
@@ -218,6 +234,11 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
       newState.openTabs = newTabs;
       saveTabsToStorage(newTabs);
 
+      // Remove cached content for deleted note
+      const newCache = new Map(state.noteContentCache);
+      newCache.delete(id);
+      newState.noteContentCache = newCache;
+
       // If deleted note was active, clear active note
       if (state.activeNoteId === id) {
         newState.activeNoteId = null;
@@ -309,6 +330,32 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
     saveTabsToStorage(newTabs);
     set({ openTabs: newTabs });
   },
+
+  // Note content cache actions
+  cacheNoteContent: (noteId, content) =>
+    set((state) => {
+      const newCache = new Map(state.noteContentCache);
+      newCache.set(noteId, {
+        content,
+        timestamp: Date.now(),
+      });
+      return { noteContentCache: newCache };
+    }),
+
+  getCachedNoteContent: (noteId) => {
+    const cache = get().noteContentCache.get(noteId);
+    return cache ? cache.content : null;
+  },
+
+  clearNoteContentCache: () =>
+    set({ noteContentCache: new Map<string, NoteContentCache>() }),
+
+  removeCachedNote: (noteId) =>
+    set((state) => {
+      const newCache = new Map(state.noteContentCache);
+      newCache.delete(noteId);
+      return { noteContentCache: newCache };
+    }),
 
   // Sidebar actions
   toggleSidebar: () =>

@@ -75,7 +75,11 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [hasTabOverflow, setHasTabOverflow] = useState(false);
   const tabBarRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch note content when activeNoteId changes
+  // Cache-related actions from store
+  const getCachedNoteContent = useFoliosStore((state) => state.getCachedNoteContent);
+  const cacheNoteContent = useFoliosStore((state) => state.cacheNoteContent);
+
+  // Fetch note content when activeNoteId changes, with cache-first strategy
   useEffect(() => {
     if (!activeNoteId) {
       setNoteContent(null);
@@ -83,6 +87,17 @@ export function EditorView({ className, note }: EditorViewProps) {
       return;
     }
 
+    // Check cache first for instant loading
+    const cachedContent = getCachedNoteContent(activeNoteId);
+    if (cachedContent !== null) {
+      // Use cached content - instant load, no API call, no loading state
+      setNoteContent(cachedContent);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    // Not in cache, fetch from API
     const fetchNote = async () => {
       setIsLoading(true);
       setError(null);
@@ -96,6 +111,9 @@ export function EditorView({ className, note }: EditorViewProps) {
         }
 
         const { data } = await response.json();
+
+        // Cache the content for instant future access
+        cacheNoteContent(activeNoteId, data.content);
         setNoteContent(data.content);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load note';
@@ -107,7 +125,7 @@ export function EditorView({ className, note }: EditorViewProps) {
     };
 
     fetchNote();
-  }, [activeNoteId]);
+  }, [activeNoteId, getCachedNoteContent, cacheNoteContent]);
 
   // Initialize auto-save hook only when there's an active note and content is loaded
   const { saveStatus, save, forceSave, error: saveError } = useAutoSave({
@@ -126,10 +144,14 @@ export function EditorView({ className, note }: EditorViewProps) {
   const handleContentChange = useCallback(
     (content: unknown) => {
       setNoteContent(content);
+      // Update cache to keep it in sync with edits
+      if (activeNoteId) {
+        cacheNoteContent(activeNoteId, content);
+      }
       // Always call save - it will handle the check internally
       save(content);
     },
-    [save]
+    [save, activeNoteId, cacheNoteContent]
   );
 
   // Handle text selection changes
@@ -877,6 +899,7 @@ export function EditorView({ className, note }: EditorViewProps) {
           />
         </h2>
         <div className="flex items-center gap-[var(--spacing-md)]">
+          <SaveIndicator status={saveStatus} error={saveError} />
           <PublishButton
             noteId={activeNoteId}
             isPublished={isPublished}
@@ -884,7 +907,6 @@ export function EditorView({ className, note }: EditorViewProps) {
             onPublishSuccess={handlePublishSuccess}
             onUnpublishSuccess={handleUnpublishSuccess}
           />
-          <SaveIndicator status={saveStatus} error={saveError} />
 
           {/* Outline drawer toggle button */}
           <Tooltip>
