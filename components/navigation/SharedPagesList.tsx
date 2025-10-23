@@ -12,6 +12,8 @@ interface SharedPage {
   noteId: string;
   pageTitle: string;
   slug: string;
+  folioId: string;
+  folioName: string;
   sharerName: string;
   sharerEmail: string;
   permission: 'read' | 'edit';
@@ -26,6 +28,7 @@ export function SharedPagesList() {
 
   // Access store functions to open notes in editor
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
+  const setActiveFolio = useFoliosStore((state) => state.setActiveFolio);
   const openTab = useFoliosStore((state) => state.openTab);
 
   useEffect(() => {
@@ -53,8 +56,10 @@ export function SharedPagesList() {
     }
   };
 
-  const handlePageClick = (noteId: string, title: string) => {
-    // Open the shared note in the editor (same as regular notes)
+  const handlePageClick = (noteId: string, title: string, folioId: string) => {
+    // Switch to the owner's folio so the note data is available
+    setActiveFolio(folioId);
+    // Open the shared note in the editor
     setActiveNote(noteId);
     openTab(noteId, title);
   };
@@ -98,7 +103,7 @@ export function SharedPagesList() {
           )}
         >
           <button
-            onClick={() => handlePageClick(page.noteId, page.pageTitle)}
+            onClick={() => handlePageClick(page.noteId, page.pageTitle, page.folioId)}
             className="flex-1 flex items-start gap-[var(--spacing-sm)] text-left min-w-0"
           >
             <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -130,6 +135,7 @@ export function SharedPagesList() {
             noteId={page.noteId}
             pageTitle={page.pageTitle}
             slug={page.slug}
+            folioId={page.folioId}
             onRemove={() => fetchSharedPages()}
           />
         </div>
