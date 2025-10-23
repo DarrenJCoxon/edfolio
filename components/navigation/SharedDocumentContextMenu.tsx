@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useFoliosStore } from '@/lib/stores/folios-store';
 
 interface SharedDocumentContextMenuProps {
   noteId: string;
@@ -39,8 +40,14 @@ export function SharedDocumentContextMenu({
   const [showCloneDialog, setShowCloneDialog] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
 
+  // Access store functions to open notes in editor
+  const setActiveNote = useFoliosStore((state) => state.setActiveNote);
+  const openTab = useFoliosStore((state) => state.openTab);
+
   const handleOpen = () => {
-    router.push(`/public/${slug}`);
+    // Open the shared document in the editor (same as clicking the file name)
+    setActiveNote(noteId);
+    openTab(noteId, pageTitle);
   };
 
   const handleClone = async () => {
