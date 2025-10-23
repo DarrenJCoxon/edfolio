@@ -4,7 +4,8 @@ import { ThemeSwitcher } from '@/components/settings/ThemeSwitcher';
 import { FontSelector } from '@/components/settings/FontSelector';
 import { SpellingSettings } from '@/components/settings/SpellingSettings';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 // Force dynamic rendering to prevent static generation
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,18 @@ export default function SettingsPage() {
             <SpellingSettings />
           </section>
 
-          {/* Future settings sections can be added here */}
+          <section className="pb-[var(--spacing-lg)]">
+            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-[var(--spacing-md)]">
+              Account
+            </h2>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="flex items-center gap-[var(--spacing-sm)] px-[var(--spacing-md)] py-[var(--spacing-sm)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/10 rounded-md transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sign Out</span>
+            </button>
+          </section>
         </div>
       </div>
     </div>
