@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SharedDocumentContextMenu } from './SharedDocumentContextMenu';
+import { useFoliosStore } from '@/lib/stores/folios-store';
 
 interface SharedPage {
   id: string;
@@ -20,7 +20,7 @@ interface SharedPage {
 }
 
 export function SharedPagesList() {
-  const router = useRouter();
+  const { setActiveNote, openTab } = useFoliosStore();
   const [sharedPages, setSharedPages] = useState<SharedPage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +50,10 @@ export function SharedPagesList() {
     }
   };
 
-  const handlePageClick = (slug: string) => {
-    // Navigate to the public page
-    router.push(`/public/${slug}`);
+  const handlePageClick = (noteId: string, pageTitle: string) => {
+    // Open the shared document in the editor
+    setActiveNote(noteId);
+    openTab(noteId, pageTitle);
   };
 
   if (isLoading) {
@@ -94,7 +95,7 @@ export function SharedPagesList() {
           )}
         >
           <button
-            onClick={() => handlePageClick(page.slug)}
+            onClick={() => handlePageClick(page.noteId, page.pageTitle)}
             className="flex-1 flex items-start gap-[var(--spacing-sm)] text-left min-w-0"
           >
             <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
