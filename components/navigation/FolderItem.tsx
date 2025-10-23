@@ -230,7 +230,7 @@ export function FolderItem({
 
       <FolderIcon className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
 
-      <span className="flex-1 truncate text-sm">{folder.name}</span>
+      <span className="flex-1 break-words text-sm">{folder.name}</span>
     </div>
   );
 }

@@ -190,7 +190,7 @@ export function NoteItem({
 
       <FileText className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
 
-      <span className="flex-1 truncate text-sm">{note.title}</span>
+      <span className="flex-1 break-words text-sm">{note.title}</span>
     </div>
   );
 }
