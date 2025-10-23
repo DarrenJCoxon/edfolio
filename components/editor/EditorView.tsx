@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TipTapEditor } from './TipTapEditor';
 import { SaveIndicator } from './SaveIndicator';
@@ -71,11 +71,18 @@ export function EditorView({ className, note }: EditorViewProps) {
   const activeNoteId = note?.id;
   const updateNote = useFoliosStore((state) => state.updateNote);
 
-  // Tab management - filter tabs to only show current folio's tabs
-  const openTabs = useFoliosStore((state) => state.getTabsForCurrentFolio());
+  // Tab management - select primitive values to avoid infinite re-renders
+  const allOpenTabs = useFoliosStore((state) => state.openTabs);
+  const activeFolioId = useFoliosStore((state) => state.activeFolioId);
   const closeTab = useFoliosStore((state) => state.closeTab);
   const closeAllTabs = useFoliosStore((state) => state.closeAllTabs);
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
+
+  // Filter tabs for current folio with useMemo to maintain stable reference
+  const openTabs = useMemo(
+    () => allOpenTabs.filter((tab) => tab.folioId === activeFolioId),
+    [allOpenTabs, activeFolioId]
+  );
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);
   const [hasTabOverflow, setHasTabOverflow] = useState(false);
   const tabBarRef = useRef<HTMLDivElement | null>(null);
