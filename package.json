@@ -11,6 +11,11 @@
     "test:ci": "jest --ci",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --testPathPattern=__tests__/integration",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "playwright:install": "playwright install",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy"
   },
@@ -73,6 +78,7 @@
   "devDependencies": {
     "@edge-runtime/jest-environment": "^4.0.0",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

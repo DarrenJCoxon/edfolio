@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { verifyAccessToken } from '@/lib/access-tokens';
 import { ClonePageRequest } from '@/types';
 
 /**
@@ -23,9 +22,6 @@ export async function POST(
     const { id: noteId } = await params;
     const body: ClonePageRequest = await request.json();
 
-    // Check if user has permission to clone
-    let hasPermission = false;
-
     // Fetch the note with published page info
     const note = await prisma.note.findUnique({
       where: { id: noteId },
@@ -44,27 +40,26 @@ export async function POST(
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
 
+    // Check if user has permission to clone
+    let hasPermission = false;
+
     // Check if user is the owner
     if (note.folio.ownerId === session.user.id) {
-      // Owner can clone (though unusual)
       hasPermission = true;
-    } else if (body.accessToken && note.published) {
-      // Check if user has edit permission via share token
-      const verification = await verifyAccessToken(body.accessToken);
-
-      if (
-        verification.valid &&
-        verification.share &&
-        verification.share.permission === 'edit' &&
-        verification.share.pageId === note.published.id
-      ) {
-        hasPermission = true;
-      }
+    } else if (note.published) {
+      // Check if user is a collaborator (either viewer or editor can clone)
+      const collaborator = await prisma.pageCollaborator.findFirst({
+        where: {
+          pageId: note.published.id,
+          userId: session.user.id,
+        },
+      });
+      hasPermission = !!collaborator;
     }
 
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'You must have edit permission to clone this page' },
+        { error: 'You do not have access to clone this page' },
         { status: 403 }
       );
     }
@@ -92,21 +87,6 @@ export async function POST(
         // No folder assigned
       },
     });
-
-    // Record collaboration if cloned via share
-    if (body.accessToken && note.published) {
-      const verification = await verifyAccessToken(body.accessToken);
-      if (verification.valid && verification.share) {
-        await prisma.pageCollaborator.create({
-          data: {
-            pageId: note.published.id,
-            userId: session.user.id,
-            shareId: verification.share.id,
-            role: 'editor',
-          },
-        });
-      }
-    }
 
     return NextResponse.json(
       {

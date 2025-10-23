@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SharedDocumentContextMenu } from './SharedDocumentContextMenu';
 
 interface SharedPage {
   id: string;
@@ -84,17 +85,18 @@ export function SharedPagesList() {
   return (
     <div className="space-y-[var(--spacing-xs)]">
       {sharedPages.map((page) => (
-        <button
+        <div
           key={page.id}
-          onClick={() => handlePageClick(page.slug)}
           className={cn(
-            'w-full text-left p-[var(--spacing-sm)]',
-            'rounded hover:bg-muted/50',
-            'transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-accent'
+            'flex items-start gap-[var(--spacing-sm)]',
+            'rounded p-[var(--spacing-sm)]',
+            'hover:bg-muted/50 transition-colors'
           )}
         >
-          <div className="flex items-start gap-[var(--spacing-sm)]">
+          <button
+            onClick={() => handlePageClick(page.slug)}
+            className="flex-1 flex items-start gap-[var(--spacing-sm)] text-left min-w-0"
+          >
             <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm text-foreground truncate">
@@ -119,8 +121,14 @@ export function SharedPagesList() {
                 </span>
               </div>
             </div>
-          </div>
-        </button>
+          </button>
+          <SharedDocumentContextMenu
+            noteId={page.noteId}
+            pageTitle={page.pageTitle}
+            slug={page.slug}
+            onRemove={() => fetchSharedPages()}
+          />
+        </div>
       ))}
     </div>
   );

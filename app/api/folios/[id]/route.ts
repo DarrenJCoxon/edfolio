@@ -32,6 +32,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Folio not found' }, { status: 404 });
     }
 
+    // Prevent renaming system folios
+    if (folio.isSystem) {
+      return NextResponse.json(
+        { error: 'System folios cannot be renamed' },
+        { status: 403 }
+      );
+    }
+
     // Parse and validate request body
     const body = await request.json();
     const { name } = updateFolioSchema.parse(body);
@@ -115,6 +123,14 @@ export async function DELETE(
 
     if (!folio) {
       return NextResponse.json({ error: 'Folio not found' }, { status: 404 });
+    }
+
+    // Prevent deleting system folios
+    if (folio.isSystem) {
+      return NextResponse.json(
+        { error: 'System folios cannot be deleted' },
+        { status: 403 }
+      );
     }
 
     // Check if user has other folios

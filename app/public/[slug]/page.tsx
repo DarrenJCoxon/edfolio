@@ -133,11 +133,35 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   let sharePermission: 'read' | 'edit' | null = null;
   let shareToken: string | undefined = undefined;
 
-  if (token) {
+  if (token && session?.user?.id) {
     const verification = await verifyAccessToken(token);
     if (verification.valid && verification.share) {
       sharePermission = verification.share.permission;
       shareToken = token;
+
+      // FIRST-TIME ACCESS FLOW: Create PageCollaborator if it doesn't exist
+      // This makes the document appear in the user's "Shared with Me" folio
+      const existingCollaborator = await prisma.pageCollaborator.findUnique({
+        where: {
+          pageId_userId: {
+            pageId: verification.share.pageId,
+            userId: session.user.id,
+          },
+        },
+      });
+
+      if (!existingCollaborator) {
+        // Create PageCollaborator on first access
+        await prisma.pageCollaborator.create({
+          data: {
+            pageId: verification.share.pageId,
+            userId: session.user.id,
+            shareId: verification.share.id,
+            role: verification.share.permission === 'edit' ? 'editor' : 'viewer',
+          },
+        });
+        console.log(`✅ Created PageCollaborator for user ${session.user.email} on first access`);
+      }
     }
   }
 

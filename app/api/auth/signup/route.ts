@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { createSystemFoliosForUser } from '@/lib/system-folios';
 import { z, ZodError } from 'zod';
 
 const signupSchema = z.object({
@@ -52,6 +53,16 @@ export async function POST(request: NextRequest) {
 
       return newUser;
     });
+
+    // Create system folios for user (including "Shared with Me")
+    // This is done outside the transaction to avoid blocking if it fails
+    try {
+      await createSystemFoliosForUser(user.id);
+    } catch (error) {
+      console.error('Failed to create system folios, but user was created:', error);
+      // Don't fail the signup if system folio creation fails
+      // It can be created later when the user first accesses the app
+    }
 
     return NextResponse.json(
       {
