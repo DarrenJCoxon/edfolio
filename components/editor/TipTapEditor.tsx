@@ -16,6 +16,7 @@ import { Callout } from '@/lib/editor/callout';
 import { SlashCommands } from '@/lib/editor/slash-commands/extension';
 import { lowlight } from '@/lib/editor/code-block-config';
 import { InlineTitleField } from './InlineTitleField';
+import { TableControls } from './TableControls';
 
 import type { Editor as TipTapEditorType } from '@tiptap/react';
 
@@ -132,7 +133,7 @@ export function TipTapEditor({
   }
 
   return (
-    <div className={cn('tiptap-editor', className)}>
+    <div className={cn('tiptap-editor group/editor relative', className)}>
       {title !== undefined && onTitleChange && (
         <InlineTitleField
           title={title}
@@ -141,6 +142,7 @@ export function TipTapEditor({
         />
       )}
       <EditorContent editor={editor} />
+      {editable && <TableControls editor={editor} />}
     </div>
   );
 }
