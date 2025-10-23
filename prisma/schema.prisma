@@ -69,6 +69,7 @@ model VerificationToken {
 model Folio {
   id        String   @id @default(cuid())
   name      String
+  isSystem  Boolean  @default(false)
   ownerId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
