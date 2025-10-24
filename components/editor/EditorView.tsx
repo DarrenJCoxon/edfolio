@@ -79,11 +79,21 @@ export function EditorView({ className, note }: EditorViewProps) {
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
 
   // Filter tabs for current folio with useMemo to maintain stable reference
+  // We include shared tabs regardless of active folio so that shared documents
+  // remain accessible even when user is viewing "Shared with Me" folio.
+  // This implements the "Virtual Folio" approach where shared docs don't
+  // require switching to the owner's folio context.
   const openTabs = useMemo(
     () => {
       // If no active folio, return empty array to show "Select a note to begin"
       if (!activeFolioId) return [];
-      return allOpenTabs.filter((tab) => tab.folioId === activeFolioId);
+
+      // Include tabs that:
+      // 1. Belong to the current active folio, OR
+      // 2. Are marked as shared (isShared: true)
+      return allOpenTabs.filter((tab) =>
+        tab.folioId === activeFolioId || tab.isShared === true
+      );
     },
     [allOpenTabs, activeFolioId]
   );

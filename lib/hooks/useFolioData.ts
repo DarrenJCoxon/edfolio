@@ -39,6 +39,18 @@ export function useFolioData() {
   useEffect(() => {
     if (!activeFolioId) return;
 
+    // Skip folder/note loading for "Shared with Me" system folio
+    // Shared documents are loaded individually via direct note fetch
+    // Note: "Shared with Me" is a virtual folio that doesn't own folders or notes.
+    // Shared documents are managed separately via PageCollaborator records and
+    // loaded directly when opened, not through folio queries.
+    if (activeFolioId === '__shared__') {
+      // Clear folders and notes to avoid showing owner's data
+      setFolders([]);
+      setNotes([]);
+      return;
+    }
+
     const fetchFolioData = async () => {
       try {
         // Fetch folders
