@@ -28,8 +28,9 @@ import { extractHeadings, headingsHaveChanged } from '@/lib/editor/heading-extra
 import { detectActiveHeading, scrollToHeadingPosition } from '@/lib/editor/active-heading-detection';
 import { Editor } from '@tiptap/react';
 
-export function EditorView({ className, note }: EditorViewProps) {
+export function EditorView({ className }: EditorViewProps) {
   const [noteContent, setNoteContent] = useState<unknown>(null);
+  const [noteData, setNoteData] = useState<{ id: string; title: string; folioId: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noteMeta, setNoteMeta] = useState<{
@@ -68,7 +69,9 @@ export function EditorView({ className, note }: EditorViewProps) {
   const [scrollListenerActive, setScrollListenerActive] = useState(true);
   const editorInstanceRef = useRef<unknown | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
-  const activeNoteId = note?.id;
+  // Get activeNoteId directly from store instead of note prop
+  // This allows shared notes (which aren't in the notes array) to work correctly
+  const activeNoteId = useFoliosStore((state) => state.activeNoteId);
   const updateNote = useFoliosStore((state) => state.updateNote);
 
   // Tab management - select primitive values to avoid infinite re-renders
@@ -144,6 +147,13 @@ export function EditorView({ className, note }: EditorViewProps) {
         // Cache the content for instant future access
         cacheNoteContent(activeNoteId, data.content);
         setNoteContent(data.content);
+
+        // Store note data (id, title, folioId) for use in AI features and title display
+        setNoteData({
+          id: data.id,
+          title: data.title,
+          folioId: data.folioId,
+        });
 
         // Store metadata about collaboration status
         if (meta) {
@@ -230,7 +240,7 @@ export function EditorView({ className, note }: EditorViewProps) {
   // Handle menu option clicks
   const handleOptionClick = useCallback(
     async (option: 'rephrase' | 'summarize' | 'fix-grammar') => {
-      if (!selectedText || !activeNoteId || !note?.folioId) {
+      if (!selectedText || !activeNoteId || !noteData?.folioId) {
         toast.error('Unable to process text. Please try selecting text again.');
         return;
       }
@@ -246,7 +256,7 @@ export function EditorView({ className, note }: EditorViewProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text: selectedText,
-              vaultId: note.folioId,
+              vaultId: noteData.folioId,
               noteId: activeNoteId,
             }),
           });
@@ -308,7 +318,7 @@ export function EditorView({ className, note }: EditorViewProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text: selectedText,
-              vaultId: note.folioId,
+              vaultId: noteData.folioId,
               noteId: activeNoteId,
             }),
           });
@@ -363,7 +373,7 @@ export function EditorView({ className, note }: EditorViewProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text: selectedText,
-              vaultId: note.folioId,
+              vaultId: noteData.folioId,
               noteId: activeNoteId,
             }),
           });
@@ -410,7 +420,7 @@ export function EditorView({ className, note }: EditorViewProps) {
         }
       }
     },
-    [selectedText, activeNoteId, note?.folioId]
+    [selectedText, activeNoteId, noteData?.folioId]
   );
 
   // Handle accept rephrase
@@ -652,7 +662,7 @@ export function EditorView({ className, note }: EditorViewProps) {
   // Handle title change from InlineTitleField
   const handleTitleChange = useCallback(
     async (newTitle: string) => {
-      if (!activeNoteId || !note) return;
+      if (!activeNoteId) return;
 
       try {
         const response = await fetch(`/api/notes/${activeNoteId}`, {
@@ -670,13 +680,15 @@ export function EditorView({ className, note }: EditorViewProps) {
 
         // Update local state
         updateNote(activeNoteId, { title: newTitle });
+        // Also update noteData state for immediate UI update
+        setNoteData(prev => prev ? { ...prev, title: newTitle } : null);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to update title';
         toast.error(errorMessage);
         console.error('Error updating title:', err);
       }
     },
-    [activeNoteId, note, updateNote]
+    [activeNoteId, updateNote]
   );
 
   // Handle successful publish
@@ -961,7 +973,7 @@ export function EditorView({ className, note }: EditorViewProps) {
           <TipTapEditor
             content={noteContent}
             onChange={handleContentChange}
-            title={note?.title || ''}
+            title={noteData?.title || ''}
             onTitleChange={handleTitleChange}
             isNewNote={false}
             onSelectionChange={handleSelectionChange}
