@@ -28,7 +28,6 @@ export function SharedPagesList() {
 
   // Access store functions to open notes in editor
   const setActiveNote = useFoliosStore((state) => state.setActiveNote);
-  const setActiveFolio = useFoliosStore((state) => state.setActiveFolio);
   const openTab = useFoliosStore((state) => state.openTab);
 
   useEffect(() => {
@@ -57,11 +56,13 @@ export function SharedPagesList() {
   };
 
   const handlePageClick = (noteId: string, title: string, folioId: string) => {
-    // Switch to the owner's folio so the note data is available
-    setActiveFolio(folioId);
-    // Open the shared note in the editor
+    // Note: We keep the user in "Shared with Me" folio context instead of
+    // switching to the owner's folio. This prevents tab filtering issues
+    // and provides a clearer UX where "Shared with Me" is its own space.
+
+    // Open the shared note in the editor with isShared flag
     setActiveNote(noteId);
-    openTab(noteId, title, folioId);
+    openTab(noteId, title, folioId, true); // Pass isShared = true
   };
 
   if (isLoading) {

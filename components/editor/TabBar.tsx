@@ -1,11 +1,12 @@
 'use client';
 
-import { X, MoreHorizontal } from 'lucide-react';
+import { X, MoreHorizontal, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Tab {
   noteId: string;
   title: string;
+  isShared?: boolean;
 }
 
 interface TabBarProps {
@@ -21,6 +22,7 @@ interface TabBarProps {
 interface TabItemProps {
   title: string;
   isActive: boolean;
+  isShared?: boolean;
   onTabClick: () => void;
   onTabClose: (e: React.MouseEvent) => void;
 }
@@ -28,6 +30,7 @@ interface TabItemProps {
 function TabItem({
   title,
   isActive,
+  isShared,
   onTabClick,
   onTabClose,
 }: TabItemProps) {
@@ -55,10 +58,12 @@ function TabItem({
               'border-transparent',
               'hover:bg-[var(--tab-hover-bg)]',
               'hover:text-[var(--foreground)]',
-            ]
+            ],
+        // Visual indicator for shared tabs: subtle left border
+        isShared && 'border-l-2 border-l-accent'
       )}
       role="tab"
-      aria-label={`Switch to ${title}`}
+      aria-label={`Switch to ${title}${isShared ? ' (shared)' : ''}`}
       aria-selected={isActive}
       tabIndex={0}
       onKeyDown={(e) => {
@@ -68,6 +73,9 @@ function TabItem({
         }
       }}
     >
+      {isShared && (
+        <Users className="h-3 w-3 text-accent shrink-0" aria-label="Shared document" />
+      )}
       <span className="text-sm whitespace-nowrap" onClick={onTabClick}>
         {truncatedTitle}
       </span>
@@ -114,6 +122,7 @@ export function TabBar({
             key={tab.noteId}
             title={tab.title}
             isActive={tab.noteId === activeNoteId}
+            isShared={tab.isShared}
             onTabClick={() => onTabClick(tab.noteId)}
             onTabClose={(e) => {
               e.stopPropagation();

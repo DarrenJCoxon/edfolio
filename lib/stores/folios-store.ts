@@ -5,6 +5,7 @@ interface Tab {
   noteId: string;
   title: string;
   folioId: string;
+  isShared?: boolean; // NEW: Indicates if this tab is for a shared document
 }
 
 // Cache entry for note content
@@ -53,7 +54,7 @@ interface FoliosState {
   setSelectedFolder: (id: string | null) => void;
 
   // Tab actions
-  openTab: (noteId: string, title: string, folioId: string) => void;
+  openTab: (noteId: string, title: string, folioId: string, isShared?: boolean) => void;
   closeTab: (noteId: string) => void;
   closeAllTabs: () => void;
   updateTabTitle: (noteId: string, newTitle: string) => void;
@@ -256,7 +257,7 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   setSelectedFolder: (id) => set({ selectedFolderId: id }),
 
   // Tab actions
-  openTab: (noteId, title, folioId) => {
+  openTab: (noteId, title, folioId, isShared = false) => {
     const state = get();
     const existingTabIndex = state.openTabs.findIndex((t) => t.noteId === noteId);
 
@@ -266,8 +267,8 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
       return;
     }
 
-    // Create new tab
-    let newTabs = [...state.openTabs, { noteId, title, folioId }];
+    // Create new tab with optional isShared flag
+    let newTabs = [...state.openTabs, { noteId, title, folioId, isShared }];
 
     // If exceeds max, remove oldest tab (first in array)
     if (newTabs.length > state.MAX_TABS) {
