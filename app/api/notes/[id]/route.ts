@@ -68,18 +68,40 @@ export async function GET(
     const isOwner = note.folio.ownerId === session.user.id;
 
     // Check if user is a collaborator (viewer or editor)
+    // CRITICAL: Check collaborator status even if published is null, as PageCollaborator
+    // records can exist independently of current publish status
     let collaboratorRole: string | null = null;
-    if (!isOwner && note.published) {
-      const collaborator = await prisma.pageCollaborator.findFirst({
-        where: {
-          pageId: note.published.id,
-          userId: session.user.id,
-        },
-        select: {
-          role: true,
-        },
-      });
-      collaboratorRole = collaborator?.role || null;
+    if (!isOwner) {
+      // First try to find collaborator via published page
+      if (note.published) {
+        const collaborator = await prisma.pageCollaborator.findFirst({
+          where: {
+            pageId: note.published.id,
+            userId: session.user.id,
+          },
+          select: {
+            role: true,
+          },
+        });
+        collaboratorRole = collaborator?.role || null;
+      }
+
+      // If no published page, check if collaborator record exists via note ID
+      // This handles cases where publish status changed but collaboration remains
+      if (!collaboratorRole) {
+        const collaboratorViaNote = await prisma.pageCollaborator.findFirst({
+          where: {
+            page: {
+              noteId: note.id,
+            },
+            userId: session.user.id,
+          },
+          select: {
+            role: true,
+          },
+        });
+        collaboratorRole = collaboratorViaNote?.role || null;
+      }
     }
 
     // Deny access if user is neither owner nor collaborator
@@ -150,16 +172,34 @@ export async function PATCH(
     const isOwner = existingNote.folio.ownerId === session.user.id;
 
     // Check if user is a collaborator with editor role
+    // CRITICAL: Check collaborator status even if published is null
     let isCollaborator = false;
-    if (!isOwner && existingNote.published) {
-      const collaborator = await prisma.pageCollaborator.findFirst({
-        where: {
-          pageId: existingNote.published.id,
-          userId: session.user.id,
-          role: 'editor',
-        },
-      });
-      isCollaborator = !!collaborator;
+    if (!isOwner) {
+      // First try via published page
+      if (existingNote.published) {
+        const collaborator = await prisma.pageCollaborator.findFirst({
+          where: {
+            pageId: existingNote.published.id,
+            userId: session.user.id,
+            role: 'editor',
+          },
+        });
+        isCollaborator = !!collaborator;
+      }
+
+      // If not found and no published page, check via note ID
+      if (!isCollaborator) {
+        const collaboratorViaNote = await prisma.pageCollaborator.findFirst({
+          where: {
+            page: {
+              noteId: existingNote.id,
+            },
+            userId: session.user.id,
+            role: 'editor',
+          },
+        });
+        isCollaborator = !!collaboratorViaNote;
+      }
     }
 
     // Deny access if user is neither owner nor editor
