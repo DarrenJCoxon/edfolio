@@ -23,6 +23,7 @@ export function OutlineDrawer({
       <Sheet open={isOpen} onOpenChange={onToggle}>
         <SheetContent
           side="right"
+          modal={false}
           className="outline-drawer w-[300px] hidden md:flex md:flex-col"
         >
           <SheetHeader>
@@ -43,6 +44,7 @@ export function OutlineDrawer({
     <Sheet open={isOpen} onOpenChange={onToggle}>
       <SheetContent
         side="right"
+        modal={false}
         className="outline-drawer w-[300px] hidden md:flex md:flex-col"
       >
         <SheetHeader>
