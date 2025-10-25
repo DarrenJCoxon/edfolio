@@ -1093,6 +1093,13 @@ html, body {
   border-left: 1px solid var(--outline-drawer-border);
 }
 
+/* CRITICAL: Ensure ALL elements in outline drawer can receive pointer events
+   This overrides any Radix inline styles, runtime attributes, or inherited blocks */
+.outline-drawer,
+.outline-drawer * {
+  pointer-events: auto !important;
+}
+
 .outline-heading-list {
   list-style: none;
   padding: 0;

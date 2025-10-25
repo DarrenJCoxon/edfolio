@@ -4,6 +4,7 @@ interface CreateDialogState {
   isOpen: boolean;
   type: 'folder' | 'note';
   parentId?: string;
+  parentName?: string;
 }
 
 interface RenameDialogState {
@@ -18,6 +19,7 @@ interface DeleteDialogState {
   type: 'folio' | 'folder' | 'note';
   id: string;
   name: string;
+  contentCount?: { noteCount: number; folderCount: number };
 }
 
 export function useDialogManagement() {
@@ -36,14 +38,14 @@ export function useDialogManagement() {
   );
 
   const openCreateDialog = useCallback(
-    (type: 'folder' | 'note', parentId?: string) => {
-      setCreateDialog({ isOpen: true, type, parentId });
+    (type: 'folder' | 'note', parentId?: string, parentName?: string) => {
+      setCreateDialog({ isOpen: true, type, parentId, parentName });
     },
     []
   );
 
   const closeCreateDialog = useCallback(() => {
-    setCreateDialog({ isOpen: false, type: 'folder', parentId: undefined });
+    setCreateDialog({ isOpen: false, type: 'folder', parentId: undefined, parentName: undefined });
   }, []);
 
   const openRenameDialog = useCallback(
@@ -65,9 +67,10 @@ export function useDialogManagement() {
     (
       type: 'folio' | 'folder' | 'note',
       id: string,
-      name: string
+      name: string,
+      contentCount?: { noteCount: number; folderCount: number }
     ) => {
-      setDeleteDialog({ isOpen: true, type, id, name });
+      setDeleteDialog({ isOpen: true, type, id, name, contentCount });
     },
     []
   );

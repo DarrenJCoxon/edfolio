@@ -4,15 +4,14 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Edit, Trash2, FilePlus, FolderPlus } from 'lucide-react';
+import { Edit, Trash2, FilePlus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface FolderContextMenuProps {
   children: React.ReactNode;
   onNewNote: () => void;
-  onNewFolder: () => void;
   onRename: () => void;
   onDelete: () => void;
 }
@@ -20,32 +19,43 @@ export interface FolderContextMenuProps {
 export function FolderContextMenu({
   children,
   onNewNote,
-  onNewFolder,
   onRename,
   onDelete,
 }: FolderContextMenuProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem onClick={onNewNote}>
-          <FilePlus className="mr-2 h-4 w-4" />
+      <ContextMenuContent
+        className={cn(
+          'w-48',
+          'bg-card border-border'
+        )}
+      >
+        <ContextMenuItem
+          onClick={onNewNote}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <FilePlus className="h-4 w-4" />
           <span>New Note</span>
         </ContextMenuItem>
-        <ContextMenuItem onClick={onNewFolder}>
-          <FolderPlus className="mr-2 h-4 w-4" />
-          <span>New Folder</span>
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={onRename}>
-          <Edit className="mr-2 h-4 w-4" />
+
+        <ContextMenuItem
+          onClick={onRename}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <Edit className="h-4 w-4" />
           <span>Rename</span>
         </ContextMenuItem>
+
         <ContextMenuItem
           onClick={onDelete}
-          className="text-[var(--destructive)] focus:text-[var(--destructive)]"
+          className={cn(
+            'flex items-center gap-2 cursor-pointer',
+            'text-destructive focus:text-destructive',
+            'focus:bg-destructive/10'
+          )}
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
           <span>Delete</span>
         </ContextMenuItem>
       </ContextMenuContent>
