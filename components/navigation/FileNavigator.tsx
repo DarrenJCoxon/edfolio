@@ -7,6 +7,8 @@ import { useFolioCrud } from '@/lib/hooks/useFolioCrud';
 import { useSidebarResize } from '@/lib/hooks/useSidebarResize';
 import { useFolioData } from '@/lib/hooks/useFolioData';
 import { usePersistedActiveNote } from '@/lib/hooks/usePersistedActiveNote';
+import { useIsMobile } from '@/lib/hooks/useMediaQuery';
+import { useSwipeGesture } from '@/lib/hooks/useSwipeGesture';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { FileNavigatorProps, Folder, Note } from '@/types';
@@ -28,16 +30,20 @@ export function FileNavigator({ className }: FileNavigatorProps) {
     activeNoteId,
     expandedFolderIds,
     sidebarCollapsed,
+    mobileDrawerOpen,
     selectedFolderId,
     setActiveNote,
     toggleFolderExpanded,
     toggleSidebar,
+    setMobileDrawerOpen,
     setSelectedFolder,
     openTab,
   } = useFoliosStore();
 
   const { isLoading } = useFolioData();
   usePersistedActiveNote();
+
+  const isMobile = useIsMobile();
 
   const {
     createDialog,
@@ -54,12 +60,27 @@ export function FileNavigator({ className }: FileNavigatorProps) {
   const { createFolder, createNote, renameItem, deleteItem } = useFolioCrud();
   const { sidebarWidth, isResizing, handleMouseDown } = useSidebarResize();
 
+  // Swipe gesture for mobile drawer (close drawer on swipe left)
+  useSwipeGesture({
+    onSwipeLeft: () => {
+      if (isMobile && mobileDrawerOpen) {
+        setMobileDrawerOpen(false);
+      }
+    },
+    enabled: isMobile && mobileDrawerOpen,
+  });
+
   // Handle note click to open in tab
   const handleNoteClick = (noteId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       setActiveNote(noteId);
       openTab(noteId, note.title, note.folioId);
+
+      // Close mobile drawer after selecting note (better mobile UX)
+      if (isMobile) {
+        setMobileDrawerOpen(false);
+      }
     }
   };
 
@@ -125,7 +146,16 @@ export function FileNavigator({ className }: FileNavigatorProps) {
   const hasNoFiles = folders.length === 0 && notes.length === 0;
   const isSharedFolio = activeFolioId === '__shared__';
 
-  if (sidebarCollapsed) {
+  // Mobile drawer overlay
+  const drawerOverlay = isMobile && (
+    <div
+      className={cn('drawer-overlay', mobileDrawerOpen && 'visible')}
+      onClick={() => setMobileDrawerOpen(false)}
+      aria-hidden="true"
+    />
+  );
+
+  if (sidebarCollapsed && !isMobile) {
     return (
       <div
         className={cn(
@@ -151,14 +181,21 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
   return (
     <>
+      {drawerOverlay}
+
       <div
         className={cn(
           'flex flex-col h-screen bg-[var(--card)]',
           'border-r border-[var(--border)]',
           'transition-all duration-200',
+          // Desktop: Fixed sidebar
+          !isMobile && 'relative',
+          // Mobile: Fixed drawer
+          isMobile && 'file-navigator-mobile-drawer',
+          isMobile && mobileDrawerOpen && 'open',
           className
         )}
-        style={{ width: `${sidebarWidth}px` }}
+        style={!isMobile ? { width: `${sidebarWidth}px` } : undefined}
       >
         <div className="flex items-center justify-between p-[var(--spacing-md)] border-b border-[var(--border)]">
           <h2 className="text-sm font-semibold text-[var(--foreground)]">
@@ -235,16 +272,18 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
         <FolioSwitcher />
 
-        <div
-          className={cn(
-            'absolute top-0 right-0 w-1 h-full cursor-col-resize',
-            'hover:bg-accent/50 transition-colors',
-            'border-r border-border',
-            isResizing && 'bg-accent'
-          )}
-          onMouseDown={handleMouseDown}
-          aria-label="Resize sidebar"
-        />
+        {!isMobile && (
+          <div
+            className={cn(
+              'absolute top-0 right-0 w-1 h-full cursor-col-resize',
+              'hover:bg-accent/50 transition-colors',
+              'border-r border-border',
+              isResizing && 'bg-accent'
+            )}
+            onMouseDown={handleMouseDown}
+            aria-label="Resize sidebar"
+          />
+        )}
       </div>
 
       <CreateItemDialog

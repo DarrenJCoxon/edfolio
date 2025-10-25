@@ -229,6 +229,19 @@
   --title-placeholder-color: var(--muted);
   --title-margin-top: 2rem;     /* Space above title */
   --title-margin-bottom: 3rem;  /* Generous spacing like Obsidian/Notion */
+
+  /* Mobile-Specific Variables */
+  --mobile-breakpoint: 768px;
+  --tablet-breakpoint: 1024px;
+  --mobile-menu-height: 3.5rem;      /* 56px */
+  --mobile-drawer-width: 280px;      /* 80vw max */
+  --touch-target-min: 44px;          /* iOS/Android standard */
+  --mobile-padding: 1rem;            /* 16px */
+  --mobile-gap: 0.75rem;             /* 12px */
+
+  /* Drawer specific */
+  --drawer-overlay-bg: rgba(0, 0, 0, 0.5);
+  --drawer-transition: 300ms ease-out;
 }
 
 /* Dark mode class (for theme switcher) */
@@ -1226,4 +1239,74 @@ html, body {
 
 .ProseMirror.resize-cursor {
   cursor: col-resize;
+}
+
+/* ============================================
+   Mobile Responsive Styles
+   ============================================ */
+
+/* Mobile Media Query - Hide/Show Components */
+@media (max-width: 768px) {
+  /* Hide Action Rail on mobile */
+  .action-rail {
+    display: none;
+  }
+
+  /* Hide Tab Bar on mobile (already exists above, but ensuring consistency) */
+  .tab-bar {
+    display: none !important;
+  }
+
+  /* Hide Outline Drawer on mobile (already exists above) */
+  .outline-drawer-toggle {
+    display: none;
+  }
+
+  /* Full width editor on mobile */
+  .editor-view {
+    width: 100%;
+    padding-left: var(--mobile-padding);
+    padding-right: var(--mobile-padding);
+  }
+
+  /* File Navigator - Drawer mode on mobile */
+  .file-navigator-mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--mobile-drawer-width);
+    max-width: 85vw;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform var(--drawer-transition);
+  }
+
+  .file-navigator-mobile-drawer.open {
+    transform: translateX(0);
+  }
+
+  /* Drawer overlay */
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--drawer-overlay-bg);
+    z-index: 49;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease-out;
+  }
+
+  .drawer-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .file-navigator-mobile-drawer,
+  .drawer-overlay {
+    transition: none;
+  }
 }
