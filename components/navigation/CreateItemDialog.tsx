@@ -18,6 +18,7 @@ export interface CreateItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (name: string) => Promise<void>;
+  parentFolderName?: string;
 }
 
 export function CreateItemDialog({
@@ -25,6 +26,7 @@ export function CreateItemDialog({
   isOpen,
   onClose,
   onCreate,
+  parentFolderName,
 }: CreateItemDialogProps) {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +71,9 @@ export function CreateItemDialog({
   };
 
   const getDescription = () => {
+    if (type === 'note' && parentFolderName) {
+      return `Create a new note in "${parentFolderName}"`;
+    }
     switch (type) {
       case 'folio':
         return 'Enter a name for your new folio.';

@@ -24,6 +24,32 @@ import { MoveFolderDialog } from './MoveFolderDialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+// Utility function to count folder contents recursively
+function getFolderContents(
+  folderId: string,
+  folders: Folder[],
+  notes: Note[]
+): { noteCount: number; folderCount: number } {
+  let noteCount = 0;
+  let folderCount = 0;
+
+  // Count direct child notes
+  noteCount = notes.filter((n) => n.folderId === folderId).length;
+
+  // Count direct child folders
+  const childFolders = folders.filter((f) => f.parentId === folderId);
+  folderCount = childFolders.length;
+
+  // Recursively count contents of child folders
+  childFolders.forEach((childFolder) => {
+    const childContents = getFolderContents(childFolder.id, folders, notes);
+    noteCount += childContents.noteCount;
+    folderCount += childContents.folderCount;
+  });
+
+  return { noteCount, folderCount };
+}
+
 export function FileNavigator({ className }: FileNavigatorProps) {
   const {
     folios,
@@ -146,6 +172,25 @@ export function FileNavigator({ className }: FileNavigatorProps) {
   const handleCreateNote = async (title: string) => {
     if (!activeFolioId) return;
     await createNote(title, activeFolioId, createDialog.parentId);
+    // Note is created from folder menu if createDialog.parentId is set
+  };
+
+  const handleNewNoteInFolder = (folderId: string) => {
+    const folder = folders.find((f) => f.id === folderId);
+    if (folder) {
+      openCreateDialog('note', folderId, folder.name);
+    }
+  };
+
+  const handleDeleteFolder = (folderId: string) => {
+    const folder = folders.find((f) => f.id === folderId);
+    if (!folder) return;
+
+    // Count folder contents
+    const contents = getFolderContents(folderId, folders, notes);
+
+    // Open delete dialog with content count
+    openDeleteDialog('folder', folderId, folder.name, contents);
   };
 
   const handleRename = async (newName: string) => {
@@ -155,7 +200,45 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
   const handleDelete = async () => {
     if (!deleteDialog) return;
-    await deleteItem(deleteDialog.type, deleteDialog.id);
+
+    // If deleting a folder, close tabs for deleted notes
+    if (deleteDialog.type === 'folder') {
+      const folderId = deleteDialog.id;
+
+      // Get all notes in folder (before deletion)
+      const notesInFolder = notes.filter((n) => n.folderId === folderId);
+
+      // Recursively get notes in subfolders
+      const getAllDescendantNotes = (parentId: string): Note[] => {
+        const directNotes = notes.filter((n) => n.folderId === parentId);
+        const subfolders = folders.filter((f) => f.parentId === parentId);
+        const subfoldersNotes = subfolders.flatMap((sf) =>
+          getAllDescendantNotes(sf.id)
+        );
+        return [...directNotes, ...subfoldersNotes];
+      };
+
+      const childFolders = folders.filter((f) => f.parentId === folderId);
+      const allNotesInFolder = [
+        ...notesInFolder,
+        ...childFolders.flatMap((cf) => getAllDescendantNotes(cf.id))
+      ];
+
+      // Delete the folder
+      await deleteItem(deleteDialog.type, deleteDialog.id);
+
+      // Close tabs for all notes that were in the folder
+      const { closeTab } = useFoliosStore.getState();
+      allNotesInFolder.forEach((note) => {
+        if (activeNoteId === note.id) {
+          setActiveNote(null);
+        }
+        closeTab(note.id);
+      });
+    } else {
+      // Non-folder deletion (existing logic)
+      await deleteItem(deleteDialog.type, deleteDialog.id);
+    }
   };
 
   // Handle opening move dialog
@@ -364,6 +447,8 @@ export function FileNavigator({ className }: FileNavigatorProps) {
                 onSelectFolder={setSelectedFolder}
                 onMoveNote={handleOpenMoveDialog}
                 onDuplicateNote={handleDuplicateNote}
+                onNewNoteInFolder={handleNewNoteInFolder}
+                onDeleteFolder={handleDeleteFolder}
               />
             )}
           </div>
@@ -392,6 +477,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
         onCreate={
           createDialog.type === 'folder' ? handleCreateFolder : handleCreateNote
         }
+        parentFolderName={createDialog.parentName}
       />
 
       {renameDialog && (
@@ -411,6 +497,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
           isOpen={deleteDialog.isOpen}
           onClose={closeDeleteDialog}
           onConfirm={handleDelete}
+          contentCount={deleteDialog.contentCount}
         />
       )}
 

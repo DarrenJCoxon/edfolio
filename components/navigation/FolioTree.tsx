@@ -24,6 +24,8 @@ interface FolioTreeProps {
   onSelectFolder: (id: string | null) => void;
   onMoveNote?: (id: string) => void;
   onDuplicateNote?: (id: string) => void;
+  onNewNoteInFolder?: (folderId: string) => void;
+  onDeleteFolder?: (folderId: string) => void;
 }
 
 export function FolioTree({
@@ -42,6 +44,8 @@ export function FolioTree({
   onSelectFolder,
   onMoveNote,
   onDuplicateNote,
+  onNewNoteInFolder,
+  onDeleteFolder,
 }: FolioTreeProps) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemType, setEditingItemType] = useState<'folder' | 'note' | null>(null);
@@ -104,17 +108,17 @@ export function FolioTree({
     const isExpanded = expandedFolderIds.has(folder.id);
     const childFolders = folders.filter((f) => f.parentId === folder.id);
     const childNotes = notes.filter((n) => n.folderId === folder.id);
+    const hasChildren = childFolders.length > 0 || childNotes.length > 0;
 
     return (
       <div key={folder.id}>
         <FolderContextMenu
-          onNewNote={() => onCreateNote(folder.id)}
-          onNewFolder={() => onCreateFolder(folder.id)}
+          onNewNote={() => onNewNoteInFolder ? onNewNoteInFolder(folder.id) : onCreateNote(folder.id)}
           onRename={() => {
             setEditingItemId(folder.id);
             setEditingItemType('folder');
           }}
-          onDelete={() => onDelete('folder', folder.id, folder.name)}
+          onDelete={() => onDeleteFolder ? onDeleteFolder(folder.id) : onDelete('folder', folder.id, folder.name)}
         >
           <FolderItem
             folder={folder}
@@ -122,6 +126,9 @@ export function FolioTree({
             isExpanded={isExpanded}
             onToggleExpand={onToggleFolderExpand}
             onRename={handleRenameFolder}
+            onDelete={onDeleteFolder}
+            onNewNote={onNewNoteInFolder}
+            hasChildren={hasChildren}
             isEditingExternally={editingItemId === folder.id && editingItemType === 'folder'}
             onStartEdit={() => {
               setEditingItemId(folder.id);

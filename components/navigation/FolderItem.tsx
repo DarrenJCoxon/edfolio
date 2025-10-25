@@ -4,6 +4,7 @@ import { Folder } from '@/types';
 import { ChevronDown, ChevronRight, Folder as FolderIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { FolderMenu } from './FolderMenu';
 
 export interface FolderItemProps {
   folder: Folder;
@@ -17,6 +18,8 @@ export interface FolderItemProps {
   onStartEdit?: () => void;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
+  onNewNote?: (folderId: string) => void;
+  hasChildren?: boolean;
 }
 
 export function FolderItem({
@@ -26,10 +29,13 @@ export function FolderItem({
   onToggleExpand,
   onClick,
   onRename,
+  onDelete,
   isEditingExternally = false,
   onStartEdit,
   isSelected = false,
   onSelect,
+  onNewNote,
+  hasChildren = false,
 }: FolderItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(folder.name);
@@ -203,6 +209,7 @@ export function FolderItem({
       aria-selected={isSelected}
       aria-label={folder.name}
       className={cn(
+        'group', // Add group class for hover effects
         'flex items-center gap-[var(--spacing-xs)] py-[var(--spacing-xs)]',
         'cursor-pointer rounded-[var(--radius-sm)]',
         'hover:bg-[var(--muted)]/10 active:bg-[var(--muted)]/20',
@@ -232,6 +239,23 @@ export function FolderItem({
       <FolderIcon className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
 
       <span className="flex-1 break-words text-sm">{folder.name}</span>
+
+      {/* Folder Menu */}
+      {(onNewNote || onRename || onDelete) && (
+        <FolderMenu
+          folderId={folder.id}
+          folderName={folder.name}
+          hasChildren={hasChildren}
+          onNewNote={onNewNote || (() => {})}
+          onRename={() => {
+            if (onRename) {
+              // Trigger inline editing instead of dialog
+              handleEditStart();
+            }
+          }}
+          onDelete={onDelete || (() => {})}
+        />
+      )}
     </div>
   );
 }
