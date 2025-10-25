@@ -23,6 +23,7 @@ import { SharedPagesList } from './SharedPagesList';
 import { MoveFolderDialog } from './MoveFolderDialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 // Utility function to count folder contents recursively
 function getFolderContents(
@@ -257,7 +258,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
   // Handle moving a note
   const handleMoveNote = async (noteId: string, targetFolderId: string | null) => {
     try {
-      const response = await fetch(`/api/notes/${noteId}/move`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/move`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folderId: targetFolderId }),
@@ -289,7 +290,7 @@ export function FileNavigator({ className }: FileNavigatorProps) {
       const note = notes.find((n) => n.id === noteId);
       if (!note) return;
 
-      const response = await fetch(`/api/notes/${noteId}/clone`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/clone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetFolderId: note.folderId }),

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -43,7 +44,7 @@ export function useAutoSave({
         setSaveStatus('saving');
         setError(null);
 
-        const response = await fetch(`/api/notes/${noteIdToSave}`, {
+        const response = await fetchWithCsrf(`/api/notes/${noteIdToSave}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import { ItemContextMenu } from './ItemContextMenu';
 import { FolderContextMenu } from './FolderContextMenu';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 interface FolioTreeProps {
   folders: Folder[];
@@ -52,7 +53,7 @@ export function FolioTree({
 
   const handleRenameFolder = async (folderId: string, newName: string) => {
     try {
-      const response = await fetch(`/api/folders/${folderId}`, {
+      const response = await fetchWithCsrf(`/api/folders/${folderId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +80,7 @@ export function FolioTree({
 
   const handleRenameNote = async (noteId: string, newName: string) => {
     try {
-      const response = await fetch(`/api/notes/${noteId}`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

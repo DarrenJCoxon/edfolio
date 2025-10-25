@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { z, ZodError } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 // Validation schema for POST requests
 const createNoteSchema = z.object({
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/notes - Create a new note
-export async function POST(request: NextRequest) {
+export const POST = withCsrfProtection(async (request: NextRequest) => {
   let body: unknown;
   try {
     // Verify authentication
@@ -139,6 +140,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

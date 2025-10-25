@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export interface NoteData {
   id: string;
@@ -116,7 +117,7 @@ export function useNoteLoading({
       if (!activeNoteId) return;
 
       try {
-        const response = await fetch(`/api/notes/${activeNoteId}`, {
+        const response = await fetchWithCsrf(`/api/notes/${activeNoteId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

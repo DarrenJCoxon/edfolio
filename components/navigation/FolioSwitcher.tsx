@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronsUpDown, Plus, Users } from 'lucide-react';
 import { CreateItemDialog } from './CreateItemDialog';
 import { cn } from '@/lib/utils';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export function FolioSwitcher() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -23,7 +24,7 @@ export function FolioSwitcher() {
 
   const handleCreateFolio = async (name: string) => {
     try {
-      const response = await fetch('/api/folios', {
+      const response = await fetchWithCsrf('/api/folios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { uploadFile, isValidImageType, isValidFileSize } from '@/lib/storage';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 /**
  * POST /api/upload
  * Upload an image file to Scaleway Object Storage (EU-based for GDPR compliance)
  */
-export async function POST(request: NextRequest) {
+export const POST = withCsrfProtection(async (request: NextRequest) => {
   try {
     // Verify authentication
     const session = await auth();
@@ -65,4 +66,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

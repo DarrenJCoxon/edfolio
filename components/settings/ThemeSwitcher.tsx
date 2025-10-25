@@ -4,6 +4,7 @@ import { useTheme } from '@/lib/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 
@@ -31,7 +32,7 @@ export function ThemeSwitcher() {
     if (session?.user) {
       // Sync to database (optimistic update - don't block UI)
       try {
-        const response = await fetch('/api/user/preferences', {
+        const response = await fetchWithCsrf('/api/user/preferences', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ themePreference: newTheme }),

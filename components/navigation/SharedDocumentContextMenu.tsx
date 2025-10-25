@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useFoliosStore } from '@/lib/stores/folios-store';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 interface SharedDocumentContextMenuProps {
   noteId: string;
@@ -58,7 +59,7 @@ export function SharedDocumentContextMenu({
   const handleClone = async () => {
     setIsCloning(true);
     try {
-      const response = await fetch(`/api/notes/${noteId}/clone`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/clone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),

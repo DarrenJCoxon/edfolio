@@ -4,8 +4,9 @@ import { scalewayClient, DEFAULT_MODEL } from '@/lib/ai/scaleway-client';
 import { checkRateLimit } from '@/lib/ai/rate-limiter';
 import { prisma } from '@/lib/prisma';
 import { getUserSpellingPreference, getSpellingPromptInstruction } from '@/lib/ai/spelling-utils';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrfProtection(async (request: NextRequest) => {
   try {
     // 1. Validate authentication
     const session = await auth();
@@ -135,4 +136,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

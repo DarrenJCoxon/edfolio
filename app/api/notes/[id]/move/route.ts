@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { z, ZodError } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 // Validation schema for move request
 const moveNoteSchema = z.object({
@@ -12,10 +13,10 @@ const moveNoteSchema = z.object({
  * POST /api/notes/[id]/move
  * Move a note to a different folder
  */
-export async function POST(
+export const POST = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id: noteId } = await params;
 
@@ -142,6 +143,6 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

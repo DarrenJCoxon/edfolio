@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { generateAccessToken } from '@/lib/access-tokens';
 import { sendShareInvitation } from '@/lib/email-service';
 import { CreateShareRequest } from '@/types';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 /**
  * GET /api/notes/[id]/shares
@@ -75,10 +76,10 @@ export async function GET(
  * POST /api/notes/[id]/shares
  * Create a new share invitation
  */
-export async function POST(
+export const POST = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const session = await auth();
     if (!session?.user?.id || !session?.user?.name) {
@@ -224,4 +225,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});

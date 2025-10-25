@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 const updateFolioSchema = z.object({
   name: z.string().min(1, 'Folio name is required').max(100),
 });
 
-export async function PATCH(
+export const PATCH = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     // Authenticate user
     const session = await auth();
@@ -90,12 +91,12 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+});
 
-export async function DELETE(
+export const DELETE = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     // Authenticate user
     const session = await auth();
@@ -163,6 +164,6 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

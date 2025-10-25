@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 const createFolderSchema = z.object({
   name: z.string().min(1, 'Folder name is required').max(100),
   folioId: z.string().cuid('Invalid folio ID'),
-  parentId: z.string().cuid('Invalid parent folder ID').nullable().optional(),
+  parentId: z.union([z.string().cuid('Invalid parent folder ID'), z.null()]).optional(),
 });
 
 // GET /api/folders - List all folders for a folio
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrfProtection(async (request: NextRequest) => {
   try {
     // Authenticate user
     const session = await auth();
@@ -155,6 +156,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

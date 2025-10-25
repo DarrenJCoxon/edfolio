@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { z, ZodError } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { validateFileName } from '@/lib/validation/name-validation';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 // Validation schema for PATCH requests
 const updateNoteSchema = z.object({
@@ -131,10 +132,10 @@ export async function GET(
 }
 
 // PATCH /api/notes/[id] - Update note content and/or title
-export async function PATCH(
+export const PATCH = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
 
@@ -262,13 +263,13 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/notes/[id] - Delete a note
-export async function DELETE(
+export const DELETE = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
 
@@ -308,6 +309,6 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';
