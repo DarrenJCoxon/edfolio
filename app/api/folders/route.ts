@@ -7,7 +7,7 @@ import { withCsrfProtection } from '@/lib/api/csrf-validation';
 const createFolderSchema = z.object({
   name: z.string().min(1, 'Folder name is required').max(100),
   folioId: z.string().cuid('Invalid folio ID'),
-  parentId: z.string().cuid('Invalid parent folder ID').nullable().optional(),
+  parentId: z.union([z.string().cuid('Invalid parent folder ID'), z.null()]).optional(),
 });
 
 // GET /api/folders - List all folders for a folio
