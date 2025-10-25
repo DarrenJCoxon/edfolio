@@ -22,6 +22,8 @@ interface FolioTreeProps {
   onCreateFolder: (parentId?: string) => void;
   selectedFolderId: string | null;
   onSelectFolder: (id: string | null) => void;
+  onMoveNote?: (id: string) => void;
+  onDuplicateNote?: (id: string) => void;
 }
 
 export function FolioTree({
@@ -38,6 +40,8 @@ export function FolioTree({
   onCreateFolder,
   selectedFolderId,
   onSelectFolder,
+  onMoveNote,
+  onDuplicateNote,
 }: FolioTreeProps) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemType, setEditingItemType] = useState<'folder' | 'note' | null>(null);
@@ -146,6 +150,9 @@ export function FolioTree({
                   isActive={note.id === activeNoteId}
                   onClick={onSelectNote}
                   onRename={handleRenameNote}
+                  onDelete={(id) => onDelete('note', id, note.title)}
+                  onMove={onMoveNote}
+                  onDuplicate={onDuplicateNote}
                   isEditingExternally={editingItemId === note.id && editingItemType === 'note'}
                   onStartEdit={() => {
                     setEditingItemId(note.id);
@@ -185,6 +192,9 @@ export function FolioTree({
             isActive={note.id === activeNoteId}
             onClick={onSelectNote}
             onRename={handleRenameNote}
+            onDelete={(id) => onDelete('note', id, note.title)}
+            onMove={onMoveNote}
+            onDuplicate={onDuplicateNote}
             isEditingExternally={editingItemId === note.id && editingItemType === 'note'}
             onStartEdit={() => {
               setEditingItemId(note.id);

@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ClonePageRequest } from '@/types';
+import { z } from 'zod';
+
+// Extended validation schema for clone request
+const cloneRequestSchema = z.object({
+  targetFolderId: z.string().nullable().optional(),
+  accessToken: z.string().optional(),
+});
 
 /**
  * POST /api/notes/[id]/clone
@@ -20,7 +27,8 @@ export async function POST(
     }
 
     const { id: noteId } = await params;
-    const body: ClonePageRequest = await request.json();
+    const body = await request.json();
+    const { targetFolderId, accessToken } = cloneRequestSchema.parse(body);
 
     // Fetch the note with published page info
     const note = await prisma.note.findUnique({
@@ -77,14 +85,33 @@ export async function POST(
       );
     }
 
+    // Determine target folder (use source note's folder if not specified)
+    const targetFolder = targetFolderId !== undefined ? targetFolderId : note.folderId;
+
+    // Handle duplicate title in destination folder
+    let duplicateTitle = `${note.title} (Copy)`;
+    let counter = 2;
+    while (true) {
+      const exists = await prisma.note.findFirst({
+        where: {
+          folioId: userFolio.id,
+          folderId: targetFolder,
+          title: duplicateTitle,
+        },
+      });
+      if (!exists) break;
+      duplicateTitle = `${note.title} (Copy ${counter})`;
+      counter++;
+    }
+
     // Clone the note
     const clonedNote = await prisma.note.create({
       data: {
-        title: `${note.title} (Copy)`,
+        title: duplicateTitle,
         content: note.content as Parameters<typeof prisma.note.create>[0]['data']['content'],
         folioId: userFolio.id,
+        folderId: targetFolder, // Use determined folder
         // Not published by default
-        // No folder assigned
       },
     });
 

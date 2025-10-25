@@ -4,6 +4,7 @@ import { Note } from '@/types';
 import { FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { FileMenu } from './FileMenu';
 
 export interface NoteItemProps {
   note: Note;
@@ -12,6 +13,8 @@ export interface NoteItemProps {
   onClick: (id: string) => void;
   onRename?: (id: string, newName: string) => Promise<void>;
   onDelete?: (id: string) => void;
+  onMove?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
   isEditingExternally?: boolean;
   onStartEdit?: () => void;
 }
@@ -22,6 +25,9 @@ export function NoteItem({
   isActive,
   onClick,
   onRename,
+  onDelete,
+  onMove,
+  onDuplicate,
   isEditingExternally = false,
   onStartEdit,
 }: NoteItemProps) {
@@ -176,6 +182,7 @@ export function NoteItem({
       aria-label={note.title}
       aria-selected={isActive}
       className={cn(
+        'group', // Add group class for hover effects
         'flex items-center gap-[var(--spacing-xs)] py-[var(--spacing-xs)]',
         'cursor-pointer rounded-[var(--radius-sm)]',
         'hover:bg-[var(--muted)]/10 active:bg-[var(--muted)]/20',
@@ -192,6 +199,18 @@ export function NoteItem({
       <FileText className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
 
       <span className="flex-1 break-words text-sm">{note.title}</span>
+
+      {/* File Menu */}
+      {(onMove || onDuplicate || onDelete) && (
+        <FileMenu
+          noteId={note.id}
+          noteTitle={note.title}
+          folderId={note.folderId}
+          onMove={onMove || (() => {})}
+          onDuplicate={onDuplicate || (() => {})}
+          onDelete={onDelete || (() => {})}
+        />
+      )}
     </div>
   );
 }
