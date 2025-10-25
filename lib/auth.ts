@@ -2,6 +2,7 @@ import type { NextAuthConfig } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -13,6 +14,7 @@ const loginSchema = z.object({
 });
 
 export const authOptions: NextAuthConfig = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID ?? '',
@@ -66,7 +68,7 @@ export const authOptions: NextAuthConfig = {
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -76,82 +78,14 @@ export const authOptions: NextAuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Only run for OAuth providers (Google)
-      if (account?.provider !== 'google') {
-        return true;
-      }
-
-      try {
-        // Check if user exists by email
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-          include: { folios: true },
-        });
-
-        if (!existingUser) {
-          // New user - will be created by NextAuth
-          // Default folio creation handled in events.createUser
-          return true;
-        }
-
-        // Existing user - link Google account if not already linked
-        const existingAccount = await prisma.account.findUnique({
-          where: {
-            provider_providerAccountId: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-            },
-          },
-        });
-
-        if (!existingAccount) {
-          // Link Google account to existing user
-          await prisma.account.create({
-            data: {
-              userId: existingUser.id,
-              type: account.type,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              refresh_token: account.refresh_token,
-              access_token: account.access_token,
-              expires_at: account.expires_at,
-              token_type: account.token_type,
-              scope: account.scope,
-              id_token: account.id_token,
-              session_state: account.session_state as string | null | undefined,
-            },
-          });
-        }
-
-        // Update user profile with Google data if not set
-        if (!existingUser.name || !existingUser.image) {
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: {
-              name: existingUser.name || user.name,
-              image: existingUser.image || user.image,
-              emailVerified: existingUser.emailVerified || new Date(),
-            },
-          });
-        }
-
-        return true;
-      } catch (error) {
-        console.error('Error in signIn callback:', error);
-        return false;
-      }
+      // Allow all sign-ins - adapter handles user/account creation
+      return true;
     },
-    async jwt({ token, user, account, profile }) {
-      if (user) {
-        token.id = user.id;
-        token.image = user.image;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
-        session.user.image = token.image as string | null | undefined;
+    async session({ session, user }) {
+      // With database sessions, user comes from database
+      if (session.user && user) {
+        session.user.id = user.id;
+        session.user.image = user.image;
       }
       return session;
     },
