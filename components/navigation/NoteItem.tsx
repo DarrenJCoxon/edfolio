@@ -178,8 +178,9 @@ export function NoteItem({
       className={cn(
         'flex items-center gap-[var(--spacing-xs)] py-[var(--spacing-xs)]',
         'cursor-pointer rounded-[var(--radius-sm)]',
-        'hover:bg-[var(--muted)]/10',
+        'hover:bg-[var(--muted)]/10 active:bg-[var(--muted)]/20',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]',
+        'min-h-[44px] md:min-h-0', // Touch target minimum on mobile
         isActive && 'bg-[var(--accent)]/10 text-[var(--accent)]'
       )}
       style={indentStyle}

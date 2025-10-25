@@ -23,6 +23,7 @@ interface FoliosState {
   selectedFolderId: string | null;
   expandedFolderIds: Set<string>;
   sidebarCollapsed: boolean;
+  mobileDrawerOpen: boolean;
   focusedItemId: string | null;
   focusedItemType: 'folio' | 'folder' | 'note' | null;
   openTabs: Tab[];
@@ -69,6 +70,10 @@ interface FoliosState {
   // Sidebar actions
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+
+  // Mobile drawer actions
+  setMobileDrawerOpen: (open: boolean) => void;
+  toggleMobileDrawer: () => void;
 
   // Focus actions
   setFocusedItem: (id: string | null, type: 'folio' | 'folder' | 'note' | null) => void;
@@ -117,6 +122,7 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
   selectedFolderId: null,
   expandedFolderIds: new Set<string>(),
   sidebarCollapsed: false,
+  mobileDrawerOpen: false,
   focusedItemId: null,
   focusedItemType: null,
   openTabs: typeof window !== 'undefined' ? loadTabsFromStorage() : [],
@@ -369,6 +375,12 @@ export const useFoliosStore = create<FoliosState>((set, get) => ({
     })),
 
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+
+  // Mobile drawer actions
+  setMobileDrawerOpen: (open) => set({ mobileDrawerOpen: open }),
+
+  toggleMobileDrawer: () =>
+    set((state) => ({ mobileDrawerOpen: !state.mobileDrawerOpen })),
 
   // Focus actions
   setFocusedItem: (id, type) =>
