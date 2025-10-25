@@ -24,7 +24,7 @@ export function InlineTitleField({
   className,
 }: InlineTitleFieldProps) {
   const [localTitle, setLocalTitle] = useState(title);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Update local title when prop changes (e.g., switching notes)
   useEffect(() => {
@@ -37,6 +37,14 @@ export function InlineTitleField({
       inputRef.current.focus();
     }
   }, [isNewNote]);
+
+  // Auto-resize textarea to fit content
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = inputRef.current.scrollHeight + 'px';
+    }
+  }, [localTitle]);
 
   /**
    * Generate timestamp in format: "Untitled - Mon DD, YYYY"
@@ -66,7 +74,7 @@ export function InlineTitleField({
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       inputRef.current?.blur(); // Trigger blur to save
@@ -80,14 +88,14 @@ export function InlineTitleField({
 
   return (
     <div className={cn('inline-title-field-container', className)}>
-      <input
+      <textarea
         ref={inputRef}
-        type="text"
         value={localTitle}
         onChange={(e) => setLocalTitle(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder="Untitled"
+        rows={1}
         className={cn(
           // Typography matching h1 from globals.css (line 331-338)
           'text-[2.25rem]',
@@ -99,11 +107,16 @@ export function InlineTitleField({
           'w-full',
           'mt-[var(--title-margin-top)]',
           'mb-[var(--title-margin-bottom)]',
-          // Remove default input styles
+          // Remove default textarea styles
           'border-none',
           'outline-none',
           'bg-transparent',
           'p-0',
+          'resize-none',
+          'overflow-hidden',
+          // Wrapping
+          'whitespace-pre-wrap',
+          'break-words',
           // Interaction
           'focus:outline-none',
           'focus:ring-0',

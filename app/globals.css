@@ -1100,49 +1100,65 @@ html, body {
 }
 
 .outline-heading-item {
-  padding: 0.375rem var(--spacing-md);
-  border-radius: 0;
+  padding: 4px 12px;
+  border-radius: 4px;
   cursor: pointer;
   color: var(--outline-heading-text);
-  font-size: 0.875rem;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.5;
   transition: all 0.15s ease;
-  margin-bottom: 0;
+  margin-bottom: 2px;
   user-select: none;
-  border-left: 2px solid transparent;
+  border-left: none;
 }
 
 .outline-heading-h1 {
-  padding-left: var(--spacing-md);
+  padding-left: 12px;
   font-weight: 500;
 }
 
 .outline-heading-h2 {
-  padding-left: calc(var(--spacing-md) + 0.75rem);
+  padding-left: 24px;
 }
 
 .outline-heading-h3 {
-  padding-left: calc(var(--spacing-md) + 1.5rem);
-  font-size: 0.875rem;
+  padding-left: 36px;
+  font-size: 13px;
   font-weight: 400;
 }
 
 .outline-heading-item:hover {
-  background-color: rgba(59, 130, 246, 0.04);
-  color: var(--outline-heading-hover);
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dark .outline-heading-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .outline-heading-active {
-  background-color: var(--outline-heading-active-bg);
-  color: var(--outline-heading-active);
-  border-left: 2px solid var(--outline-heading-active);
+  background-color: rgba(0, 0, 0, 0.08);
+  color: var(--foreground);
   font-weight: 500;
+}
+
+.dark .outline-heading-active {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Hide drawer and toggle button on mobile */
 @media (max-width: 768px) {
   .outline-drawer-toggle {
     display: none;
+  }
+
+  /* Mobile title wrapping - ensure long titles wrap properly */
+  .inline-title-field-container textarea {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    /* Reduce font size slightly on mobile for better readability */
+    font-size: 1.75rem !important;
+    line-height: 2.25rem !important;
   }
 }
 
