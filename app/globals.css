@@ -1110,6 +1110,7 @@ html, body {
   margin-bottom: 2px;
   user-select: none;
   border-left: none;
+  pointer-events: auto !important;
 }
 
 .outline-heading-h1 {
@@ -1324,5 +1325,23 @@ html, body {
   .file-navigator-mobile-drawer,
   .drawer-overlay {
     transition: none;
+  }
+}
+
+/* ============================================
+   File Menu - Mobile Touch Device Support
+   ============================================ */
+
+/* On touch devices (no hover), always show file menu button */
+@media (hover: none) {
+  :root {
+    --menu-mobile-opacity: 1;
+  }
+}
+
+/* On devices with hover, menu opacity is controlled by group-hover */
+@media (hover: hover) {
+  :root {
+    --menu-mobile-opacity: 0;
   }
 }

@@ -20,6 +20,9 @@ import { RenameDialog } from './RenameDialog';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FolioTree } from './FolioTree';
 import { SharedPagesList } from './SharedPagesList';
+import { MoveFolderDialog } from './MoveFolderDialog';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function FileNavigator({ className }: FileNavigatorProps) {
   const {
@@ -59,6 +62,19 @@ export function FileNavigator({ className }: FileNavigatorProps) {
 
   const { createFolder, createNote, renameItem, deleteItem } = useFolioCrud();
   const { sidebarWidth, isResizing, handleMouseDown } = useSidebarResize();
+
+  // Move folder dialog state
+  const [moveFolderDialog, setMoveFolderDialog] = useState<{
+    open: boolean;
+    noteId: string | null;
+    noteTitle: string;
+    currentFolderId: string | null;
+  }>({
+    open: false,
+    noteId: null,
+    noteTitle: '',
+    currentFolderId: null,
+  });
 
   // Swipe gesture for mobile drawer (close drawer on swipe left)
   useSwipeGesture({
@@ -140,6 +156,87 @@ export function FileNavigator({ className }: FileNavigatorProps) {
   const handleDelete = async () => {
     if (!deleteDialog) return;
     await deleteItem(deleteDialog.type, deleteDialog.id);
+  };
+
+  // Handle opening move dialog
+  const handleOpenMoveDialog = (noteId: string) => {
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      setMoveFolderDialog({
+        open: true,
+        noteId: note.id,
+        noteTitle: note.title,
+        currentFolderId: note.folderId,
+      });
+    }
+  };
+
+  // Handle moving a note
+  const handleMoveNote = async (noteId: string, targetFolderId: string | null) => {
+    try {
+      const response = await fetch(`/api/notes/${noteId}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderId: targetFolderId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to move note');
+      }
+
+      const { data } = await response.json();
+
+      // Update note in store
+      const { updateNote } = useFoliosStore.getState();
+      updateNote(noteId, { folderId: targetFolderId, title: data.title });
+
+      toast.success('Note moved successfully');
+    } catch (error) {
+      console.error('Move note error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to move note';
+      toast.error(errorMessage);
+      throw error; // Re-throw for dialog to handle
+    }
+  };
+
+  // Handle duplicating a note
+  const handleDuplicateNote = async (noteId: string) => {
+    try {
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) return;
+
+      const response = await fetch(`/api/notes/${noteId}/clone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetFolderId: note.folderId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to duplicate note');
+      }
+
+      const result = await response.json();
+
+      // Add duplicated note to store
+      const { addNote } = useFoliosStore.getState();
+      addNote({
+        id: result.data.noteId,
+        title: result.data.title,
+        content: note.content,
+        folioId: note.folioId,
+        folderId: note.folderId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      toast.success(`Note duplicated: ${result.data.title}`);
+    } catch (error) {
+      console.error('Duplicate note error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to duplicate note';
+      toast.error(errorMessage);
+    }
   };
 
   const activeFolio = folios.find((f) => f.id === activeFolioId);
@@ -265,6 +362,8 @@ export function FileNavigator({ className }: FileNavigatorProps) {
                 onCreateFolder={(parentId) => openCreateDialog('folder', parentId)}
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={setSelectedFolder}
+                onMoveNote={handleOpenMoveDialog}
+                onDuplicateNote={handleDuplicateNote}
               />
             )}
           </div>
@@ -314,6 +413,19 @@ export function FileNavigator({ className }: FileNavigatorProps) {
           onConfirm={handleDelete}
         />
       )}
+
+      <MoveFolderDialog
+        open={moveFolderDialog.open}
+        onOpenChange={(open) =>
+          setMoveFolderDialog((prev) => ({ ...prev, open }))
+        }
+        noteId={moveFolderDialog.noteId || ''}
+        noteTitle={moveFolderDialog.noteTitle}
+        currentFolderId={moveFolderDialog.currentFolderId}
+        folders={folders}
+        activeFolioId={activeFolioId || ''}
+        onConfirm={handleMoveNote}
+      />
     </>
   );
 }

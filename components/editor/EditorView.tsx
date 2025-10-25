@@ -703,6 +703,11 @@ export function EditorView({ className }: EditorViewProps) {
     setPublishedSlug(null);
   }, []);
 
+  // Reset headings when switching notes
+  useEffect(() => {
+    setHeadings([]);
+  }, [activeNoteId]);
+
   // Extract headings when editor content changes (debounced)
   useEffect(() => {
     if (!editorInstanceRef.current || !noteContent) return;
