@@ -1,6 +1,6 @@
 'use client';
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileX } from 'lucide-react';
 import { OutlineDrawerProps } from '@/types';
@@ -27,6 +27,7 @@ export function OutlineDrawer({
         >
           <SheetHeader>
             <SheetTitle>Outline</SheetTitle>
+            <SheetDescription>Document outline and navigation</SheetDescription>
           </SheetHeader>
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <FileX className="h-12 w-12 text-[var(--muted)] mb-[var(--spacing-md)]" />
@@ -46,6 +47,7 @@ export function OutlineDrawer({
       >
         <SheetHeader>
           <SheetTitle>Outline</SheetTitle>
+          <SheetDescription>Document outline and navigation</SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-1 mt-[var(--spacing-md)]">
           <ul className="outline-heading-list">
