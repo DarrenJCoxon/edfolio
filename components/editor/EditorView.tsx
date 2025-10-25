@@ -235,7 +235,14 @@ export function EditorView({ className }: EditorViewProps) {
   // Handle editor ready callback
   const handleEditorReady = useCallback((editor: unknown) => {
     editorInstanceRef.current = editor;
-  }, []);
+
+    // CRITICAL FIX: Extract headings immediately after editor is ready
+    // This handles the race condition where noteContent was set before editor initialized
+    if (noteContent) {
+      const newHeadings = extractHeadings(editor as Editor);
+      setHeadings(newHeadings);
+    }
+  }, [noteContent]);
 
   // Handle menu option clicks
   const handleOptionClick = useCallback(
@@ -710,10 +717,15 @@ export function EditorView({ className }: EditorViewProps) {
 
   // Extract headings when editor content changes (debounced)
   useEffect(() => {
+    // CRITICAL: Only extract if BOTH editor AND content are ready
     if (!editorInstanceRef.current || !noteContent) return;
 
+    const editor = editorInstanceRef.current as Editor;
+
+    // Verify editor state is initialized (has document)
+    if (!editor.state?.doc) return;
+
     const extractTimer = setTimeout(() => {
-      const editor = editorInstanceRef.current as Editor;
       const newHeadings = extractHeadings(editor);
 
       // Only update if headings actually changed (prevent unnecessary re-renders)

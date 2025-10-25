@@ -58,16 +58,12 @@ export function FolderMenu({
           size="icon"
           className={cn(
             'h-8 w-8 shrink-0',
-            'opacity-0 group-hover:opacity-100', // Show on hover (desktop)
+            'folder-menu-button', // Custom class for opacity control
             'hover:bg-muted/20',
             'focus-visible:opacity-100',
             'min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0', // Touch target on mobile
             className
           )}
-          style={{
-            // Always show on mobile (touch devices)
-            opacity: 'var(--menu-mobile-opacity, 0)',
-          }}
           onClick={(e) => e.stopPropagation()} // Prevent folder expand/collapse
           aria-label={`Folder menu for ${folderName}`}
           aria-expanded={isOpen}
