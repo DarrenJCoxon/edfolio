@@ -1,68 +1,62 @@
 'use client';
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileX } from 'lucide-react';
-import { OutlineDrawerProps } from '@/types';
+import { FileX, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { TipTapHeading } from './TipTapEditor';
+
+export interface OutlineDrawerProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  headings: TipTapHeading[];
+  onHeadingClick: (headingId: string) => void;
+}
 
 /**
- * OutlineDrawer component displays a hierarchical outline of document headings
- * Supports H1, H2, and H3 headings with proper indentation and active state
+ * Simple outline drawer using fixed positioning (no portals, no Radix Dialog)
+ * Renders table of contents from TipTap's official TableOfContents extension
  */
 export function OutlineDrawer({
   isOpen,
   onToggle,
   headings,
-  activeHeadingId,
   onHeadingClick,
 }: OutlineDrawerProps) {
-  // Empty state: No headings in document
-  if (headings.length === 0) {
-    return (
-      <Sheet open={isOpen} onOpenChange={onToggle}>
-        <SheetContent
-          side="right"
-          modal={false}
-          className="outline-drawer w-[300px] hidden md:flex md:flex-col"
-        >
-          <SheetHeader>
-            <SheetTitle>Outline</SheetTitle>
-            <SheetDescription>Document outline and navigation</SheetDescription>
-          </SheetHeader>
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <FileX className="h-12 w-12 text-[var(--muted)] mb-[var(--spacing-md)]" />
-            <p className="text-sm text-[var(--muted)]">No headings in this note</p>
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  if (!isOpen) return null;
 
-  // Normal state: Display headings list
   return (
-    <Sheet open={isOpen} onOpenChange={onToggle}>
-      <SheetContent
-        side="right"
-        modal={false}
-        className="outline-drawer w-[300px] hidden md:flex md:flex-col"
-      >
-        <SheetHeader>
-          <SheetTitle>Outline</SheetTitle>
-          <SheetDescription>Document outline and navigation</SheetDescription>
-        </SheetHeader>
-        <ScrollArea className="flex-1 mt-[var(--spacing-md)]">
-          <ul className="outline-heading-list">
+    <div className="outline-drawer-simple">
+      {/* Header */}
+      <div className="outline-drawer-header">
+        <h3 className="outline-drawer-title">Outline</h3>
+        <button
+          onClick={onToggle}
+          className="outline-drawer-close"
+          aria-label="Close outline"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="outline-drawer-content">
+        {headings.length === 0 ? (
+          <div className="outline-drawer-empty">
+            <FileX className="h-12 w-12 text-[var(--muted)]" />
+            <p className="text-sm text-[var(--muted)] mt-4">
+              No headings in this note
+            </p>
+          </div>
+        ) : (
+          <ul className="outline-list">
             {headings.map((heading) => (
               <li
                 key={heading.id}
                 className={cn(
-                  'outline-heading-item',
-                  `outline-heading-h${heading.level}`,
-                  {
-                    'outline-heading-active': heading.id === activeHeadingId,
-                  }
+                  'outline-item',
+                  `outline-depth-${heading.depth}`,
+                  heading.active && 'outline-item-active'
                 )}
+                style={{ cursor: 'pointer' }}
                 onClick={() => onHeadingClick(heading.id)}
                 role="button"
                 tabIndex={0}
@@ -72,14 +66,14 @@ export function OutlineDrawer({
                     onHeadingClick(heading.id);
                   }
                 }}
-                aria-current={heading.id === activeHeadingId ? 'true' : undefined}
+                aria-current={heading.active ? 'true' : undefined}
               >
-                {heading.text}
+                {heading.content}
               </li>
             ))}
           </ul>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
+        )}
+      </div>
+    </div>
   );
 }

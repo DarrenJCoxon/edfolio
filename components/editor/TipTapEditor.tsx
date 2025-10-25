@@ -10,6 +10,7 @@ import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { Image } from '@tiptap/extension-image';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import TableOfContents from '@tiptap/extension-table-of-contents';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Callout } from '@/lib/editor/callout';
@@ -20,6 +21,14 @@ import { TableControls } from './TableControls';
 
 import type { Editor as TipTapEditorType } from '@tiptap/react';
 
+export interface TipTapHeading {
+  id: string;
+  content: string;
+  depth: number;
+  active: boolean;
+  scrolled: boolean;
+}
+
 export interface TipTapEditorProps {
   content: unknown;
   onChange: (content: unknown) => void;
@@ -28,6 +37,7 @@ export interface TipTapEditorProps {
   isNewNote?: boolean;
   onSelectionChange?: (text: string, hasSelection: boolean) => void;
   onEditorReady?: (editor: TipTapEditorType) => void;
+  onHeadingsUpdate?: (headings: TipTapHeading[]) => void;
   editable?: boolean;
   placeholder?: string;
   className?: string;
@@ -41,6 +51,7 @@ export function TipTapEditor({
   isNewNote = false,
   onSelectionChange,
   onEditorReady,
+  onHeadingsUpdate,
   editable = true,
   placeholder = 'Start typing...',
   className,
@@ -57,6 +68,22 @@ export function TipTapEditor({
       Typography,
       Callout,
       SlashCommands,
+      TableOfContents.configure({
+        onUpdate: (headings) => {
+          if (onHeadingsUpdate) {
+            // Map TableOfContentData to TipTapHeading[] format
+            const mappedHeadings: TipTapHeading[] = headings.map((item) => ({
+              id: item.id,
+              content: item.textContent,
+              depth: item.level,
+              active: item.isActive,
+              scrolled: item.isScrolledOver,
+            }));
+            onHeadingsUpdate(mappedHeadings);
+          }
+        },
+        getIndex: () => 1, // Use simple linear indexing
+      }),
       Table.configure({
         resizable: true,
         cellMinWidth: 50,

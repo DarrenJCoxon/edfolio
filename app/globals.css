@@ -1087,62 +1087,110 @@ html, body {
   color: #E06C75;
 }
 
-/* Outline Drawer Styles */
-.outline-drawer {
-  background-color: var(--outline-drawer-bg);
-  border-left: 1px solid var(--outline-drawer-border);
+/* Outline Drawer Styles - Simple Fixed Position (No Portals, No Radix) */
+.outline-drawer-simple {
+  position: fixed;
+  right: 0;
+  top: 64px; /* Below header */
+  width: 300px;
+  height: calc(100vh - 64px);
+  background-color: var(--background);
+  border-left: 1px solid var(--border);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
 }
 
-.outline-heading-list {
+.outline-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.outline-drawer-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.outline-drawer-close {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.outline-drawer-close:hover {
+  background-color: var(--muted);
+}
+
+.outline-drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.outline-drawer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.outline-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.outline-heading-item {
-  padding: 4px 12px;
+.outline-item {
+  padding: 0.5rem 0.75rem;
   border-radius: 4px;
-  cursor: pointer;
-  color: var(--outline-heading-text);
+  cursor: pointer !important;
+  color: var(--foreground);
   font-size: 13px;
   line-height: 1.5;
   transition: all 0.15s ease;
   margin-bottom: 2px;
   user-select: none;
-  border-left: none;
 }
 
-.outline-heading-h1 {
-  padding-left: 12px;
+.outline-depth-1 {
+  padding-left: 0.75rem;
   font-weight: 500;
 }
 
-.outline-heading-h2 {
-  padding-left: 24px;
-}
-
-.outline-heading-h3 {
-  padding-left: 36px;
-  font-size: 13px;
+.outline-depth-2 {
+  padding-left: 1.5rem;
   font-weight: 400;
 }
 
-.outline-heading-item:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+.outline-depth-3 {
+  padding-left: 2.5rem;
+  font-weight: 400;
+  font-size: 12px;
 }
 
-.dark .outline-heading-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.outline-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-.outline-heading-active {
-  background-color: rgba(0, 0, 0, 0.08);
-  color: var(--foreground);
+.dark .outline-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.outline-item-active {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
   font-weight: 500;
-}
-
-.dark .outline-heading-active {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Hide drawer and toggle button on mobile */
