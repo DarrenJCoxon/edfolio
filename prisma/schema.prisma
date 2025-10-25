@@ -41,7 +41,7 @@ model User {
   name               String?
   email              String    @unique
   emailVerified      DateTime?
-  password           String
+  password           String?
   image              String?
   themePreference    String?   @default("system")
   spellingPreference String    @default("UK")
