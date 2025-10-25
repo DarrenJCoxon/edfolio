@@ -1093,13 +1093,6 @@ html, body {
   border-left: 1px solid var(--outline-drawer-border);
 }
 
-/* CRITICAL: Ensure ALL elements in outline drawer can receive pointer events
-   This overrides any Radix inline styles, runtime attributes, or inherited blocks */
-.outline-drawer,
-.outline-drawer * {
-  pointer-events: auto !important;
-}
-
 .outline-heading-list {
   list-style: none;
   padding: 0;
@@ -1117,7 +1110,6 @@ html, body {
   margin-bottom: 2px;
   user-select: none;
   border-left: none;
-  pointer-events: auto !important;
 }
 
 .outline-heading-h1 {
@@ -1339,16 +1331,24 @@ html, body {
    File Menu - Mobile Touch Device Support
    ============================================ */
 
-/* On touch devices (no hover), always show file menu button */
+/* File and Folder Menu Button Visibility */
+/* On touch devices (no hover), always show menu buttons */
 @media (hover: none) {
-  :root {
-    --menu-mobile-opacity: 1;
+  .file-menu-button,
+  .folder-menu-button {
+    opacity: 1;
   }
 }
 
-/* On devices with hover, menu opacity is controlled by group-hover */
+/* On devices with hover capability, hide by default and show on group hover */
 @media (hover: hover) {
-  :root {
-    --menu-mobile-opacity: 0;
+  .file-menu-button,
+  .folder-menu-button {
+    opacity: 0;
+  }
+
+  .group:hover .file-menu-button,
+  .group:hover .folder-menu-button {
+    opacity: 1;
   }
 }
