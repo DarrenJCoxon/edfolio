@@ -1,32 +1,25 @@
-import type { NextAuthConfig } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
+import authConfig from '@/auth.config';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
-// Validation schema
+// Validation schema for credentials
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-export const authOptions: NextAuthConfig = {
+// Full Auth.js instance with database adapter
+// Uses edge-compatible base config + Prisma adapter for OAuth user creation
+// Adds Credentials provider here (requires Prisma, not edge-compatible)
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
   providers: [
-    GoogleProvider({
-      clientId: process.env.AUTH_GOOGLE_ID ?? '',
-      clientSecret: process.env.AUTH_GOOGLE_SECRET ?? '',
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-        },
-      },
-    }),
+    ...authConfig.providers,
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -68,24 +61,27 @@ export const authOptions: NextAuthConfig = {
     }),
   ],
   session: {
-    strategy: 'database',
+    strategy: 'jwt', // Required for Edge Runtime compatibility
     maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: '/login',
-    signOut: '/login',
-    error: '/login',
   },
   callbacks: {
     async signIn({ user, account, profile }) {
       // Allow all sign-ins - adapter handles user/account creation
       return true;
     },
-    async session({ session, user }) {
-      // With database sessions, user comes from database
-      if (session.user && user) {
-        session.user.id = user.id;
-        session.user.image = user.image;
+    async jwt({ token, user }) {
+      // Add user ID to token on sign in
+      if (user) {
+        token.id = user.id;
+        token.image = user.image;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add user ID from token to session
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
+        session.user.image = token.image as string | null | undefined;
       }
       return session;
     },
@@ -107,10 +103,7 @@ export const authOptions: NextAuthConfig = {
     },
   },
   secret: process.env.AUTH_SECRET,
-};
-
-// Export auth helpers
-export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
+});
 
 // Helper functions
 export async function hashPassword(password: string): Promise<string> {

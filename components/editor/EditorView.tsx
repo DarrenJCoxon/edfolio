@@ -765,11 +765,37 @@ export function EditorView({ className }: EditorViewProps) {
     const heading = headings.find(h => h.id === headingId);
     if (!heading) return;
 
+    const editor = editorInstanceRef.current as Editor;
     const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-    if (!scrollContainer) return;
+    if (!editor || !scrollContainer) return;
 
-    // Scroll to heading position (uses default 80px offset for proper top alignment)
-    scrollToHeadingPosition(heading.position, scrollContainer);
+    // Get DOM node at the ProseMirror document position
+    const domNode = editor.view.domAtPos(heading.position);
+    if (!domNode.node) return;
+
+    // Find the actual heading element (either the node itself or its parent)
+    let headingElement = domNode.node.nodeType === Node.ELEMENT_NODE
+      ? domNode.node as HTMLElement
+      : (domNode.node.parentElement as HTMLElement);
+
+    // Walk up to find the actual heading tag (h1, h2, h3)
+    while (headingElement && !['H1', 'H2', 'H3'].includes(headingElement.tagName)) {
+      headingElement = headingElement.parentElement as HTMLElement;
+      if (!headingElement || headingElement === scrollContainer) return;
+    }
+
+    if (!headingElement) return;
+
+    // Get position relative to scroll container
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const headingRect = headingElement.getBoundingClientRect();
+    const relativeTop = headingRect.top - containerRect.top + scrollContainer.scrollTop;
+
+    // Scroll to position with 80px offset for comfortable spacing at viewport top
+    scrollContainer.scrollTo({
+      top: relativeTop - 80,
+      behavior: 'smooth'
+    });
 
     // Set active heading immediately
     setActiveHeadingId(headingId);
