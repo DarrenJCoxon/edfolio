@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { calculateMenuPosition } from '@/lib/editor/menu-positioning';
 import { countWords } from '@/lib/editor/text-manipulation';
 import { extractHeadings, headingsHaveChanged } from '@/lib/editor/heading-extraction';
-import { detectActiveHeading, scrollToHeadingPosition } from '@/lib/editor/active-heading-detection';
+import { detectActiveHeading } from '@/lib/editor/active-heading-detection';
 import { Editor } from '@tiptap/react';
 
 export function EditorView({ className }: EditorViewProps) {
