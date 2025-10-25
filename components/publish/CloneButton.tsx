@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { CloneButtonProps } from '@/types';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 /**
  * Button to clone a page to user's vault
@@ -34,7 +35,7 @@ export function CloneButton({
     setIsCloning(true);
 
     try {
-      const response = await fetch(`/api/notes/${noteId}/clone`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/clone`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

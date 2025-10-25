@@ -3,15 +3,16 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendPermissionChanged, sendAccessRevoked } from '@/lib/email-service';
 import { UpdateShareRequest } from '@/types';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 /**
  * PATCH /api/notes/[id]/shares/[shareId]
  * Update share permission or status
  */
-export async function PATCH(
+export const PATCH = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string; shareId: string }> }
-) {
+) => {
   try {
     const session = await auth();
     if (!session?.user?.id || !session?.user?.name) {
@@ -139,16 +140,16 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * DELETE /api/notes/[id]/shares/[shareId]
  * Revoke a share (soft delete by setting status to 'revoked')
  */
-export async function DELETE(
+export const DELETE = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string; shareId: string }> }
-) {
+) => {
   try {
     const session = await auth();
     if (!session?.user?.id || !session?.user?.name) {
@@ -223,4 +224,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});

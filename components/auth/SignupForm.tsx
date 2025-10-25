@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { AuthResponse } from '@/types/auth';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 const signupSchema = z
   .object({
@@ -48,7 +49,7 @@ export function SignupForm() {
 
     try {
       // Call signup API
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetchWithCsrf('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useFoliosStore } from '@/lib/stores/folios-store';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export function useFolioCrud() {
   const {
@@ -16,7 +17,7 @@ export function useFolioCrud() {
   const createFolder = useCallback(
     async (name: string, folioId: string, parentId?: string) => {
       try {
-        const response = await fetch('/api/folders', {
+        const response = await fetchWithCsrf('/api/folders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -48,7 +49,7 @@ export function useFolioCrud() {
   const createNote = useCallback(
     async (title: string, folioId: string, folderId?: string) => {
       try {
-        const response = await fetch('/api/notes', {
+        const response = await fetchWithCsrf('/api/notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -91,7 +92,7 @@ export function useFolioCrud() {
             ? `/api/folders/${id}`
             : `/api/notes/${id}`;
 
-        const response = await fetch(endpoint, {
+        const response = await fetchWithCsrf(endpoint, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(
@@ -129,7 +130,7 @@ export function useFolioCrud() {
             ? `/api/folders/${id}`
             : `/api/notes/${id}`;
 
-        const response = await fetch(endpoint, { method: 'DELETE' });
+        const response = await fetchWithCsrf(endpoint, { method: 'DELETE' });
 
         if (!response.ok) {
           const { error } = await response.json();

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useFoliosStore } from '@/lib/stores/folios-store';
+import { getCsrfToken } from '@/lib/csrf';
 
 /**
  * Hook that persists the active note ID to the database whenever it changes.
@@ -27,9 +28,13 @@ export function usePersistedActiveNote() {
     // Persist to database
     const persistActiveNote = async () => {
       try {
+        const csrfToken = await getCsrfToken();
         const response = await fetch('/api/user/last-active-note', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
           body: JSON.stringify({ noteId: activeNoteId }),
         });
 

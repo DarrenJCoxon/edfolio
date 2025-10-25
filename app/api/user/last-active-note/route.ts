@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -39,7 +40,7 @@ export async function GET() {
  * PATCH /api/user/last-active-note
  * Updates the user's last active note ID
  */
-export async function PATCH(request: NextRequest) {
+export const PATCH = withCsrfProtection(async (request: NextRequest) => {
   try {
     // 1. Authenticate user
     const session = await auth();
@@ -118,4 +119,4 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

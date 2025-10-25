@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { createSystemFoliosForUser } from '@/lib/system-folios';
 import { z, ZodError } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -12,7 +13,7 @@ const signupSchema = z.object({
     .max(100, 'Password must be less than 100 characters'),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrfProtection(async (request: NextRequest) => {
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -89,6 +90,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

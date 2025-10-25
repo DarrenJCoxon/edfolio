@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { PermissionBadge } from './PermissionBadge';
 import { ShareManagementModalProps, PageShare, SharePermission } from '@/types';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -76,7 +77,7 @@ export function ShareManagementModal({
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/notes/${noteId}/shares`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/shares`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -109,7 +110,7 @@ export function ShareManagementModal({
     }
 
     try {
-      await fetch(`/api/notes/${noteId}/shares/${shareId}`, {
+      await fetchWithCsrf(`/api/notes/${noteId}/shares/${shareId}`, {
         method: 'DELETE',
       });
       toast.success(`Access revoked for ${email}`);
@@ -124,7 +125,7 @@ export function ShareManagementModal({
     newPermission: SharePermission
   ) => {
     try {
-      await fetch(`/api/notes/${noteId}/shares/${shareId}`, {
+      await fetchWithCsrf(`/api/notes/${noteId}/shares/${shareId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ permission: newPermission }),

@@ -1,28 +1,29 @@
 import { NextRequest } from 'next/server';
 import { PATCH, DELETE } from './route';
 import { prismaMock } from '@/__tests__/utils/prisma-mock';
-import { createMockPrismaFolder } from '@/__tests__/utils/test-data';
 
+// Mock dependencies
 jest.mock('@/lib/auth', () => ({
   auth: jest.fn(),
 }));
 
 jest.mock('@/lib/validation/name-validation', () => ({
-  validateFolderName: jest.fn((name: string, existingNames: string[]) => ({
-    valid: !existingNames.includes(name),
-    error: existingNames.includes(name) ? 'Name already exists' : undefined,
-  })),
+  validateFolderName: jest.fn(),
+}));
+
+jest.mock('@/lib/api/csrf-validation', () => ({
+  withCsrfProtection: (handler: Function) => handler,
 }));
 
 import { auth } from '@/lib/auth';
 import { validateFolderName } from '@/lib/validation/name-validation';
 
-const mockSession = {
-  user: { id: 'clh0e8r5k0000jw0c8y5d6usr1', email: 'test@example.com', name: 'Test User' },
-  expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-};
-
 describe('PATCH /api/folders/[id]', () => {
+  const mockSession = {
+    user: { id: 'user-1', email: 'owner@example.com', name: 'Owner' },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -30,169 +31,238 @@ describe('PATCH /api/folders/[id]', () => {
   it('should return 401 if not authenticated', async () => {
     (auth as jest.Mock).mockResolvedValue(null);
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Updated Name' }),
-      }
-    );
-
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'New Name' }),
     });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(401);
     const data = await response.json();
     expect(data.error).toBe('Unauthorized');
   });
 
-  it('should update folder successfully', async () => {
+  it('should return 404 if folder does not exist', async () => {
     (auth as jest.Mock).mockResolvedValue(mockSession);
-
-    const existingFolder = {
-      id: 'clh0e8r5k0000jw0c8y5d6fld1',
-      name: 'Old Name',
-      folioId: 'clh0e8r5k0000jw0c8y5d6fol1',
-      parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const updatedFolder = {
-      ...existingFolder,
-      name: 'Updated Name',
-      updatedAt: new Date(),
-    };
-
-    prismaMock.folder.findFirst.mockResolvedValue(existingFolder);
-    prismaMock.folder.findMany.mockResolvedValue([]);
-    prismaMock.folder.update.mockResolvedValue(updatedFolder);
-    (validateFolderName as jest.Mock).mockReturnValue({ valid: true });
-
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Updated Name' }),
-      }
-    );
-
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
-    });
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.data.name).toBe('Updated Name');
-  });
-
-  it('should return 404 if folder not found', async () => {
-    (auth as jest.Mock).mockResolvedValue(mockSession);
-
     prismaMock.folder.findFirst.mockResolvedValue(null);
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/nonexistent',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Updated Name' }),
-      }
-    );
-
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: 'nonexistent' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'New Name' }),
     });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(404);
     const data = await response.json();
     expect(data.error).toBe('Folder not found');
   });
 
-  it('should return 400 if name validation fails', async () => {
+  it('should return 404 if user does not own folder', async () => {
     (auth as jest.Mock).mockResolvedValue(mockSession);
 
-    const existingFolder = {
-      id: 'clh0e8r5k0000jw0c8y5d6fld1',
-      name: 'Old Name',
-      folioId: 'clh0e8r5k0000jw0c8y5d6fol1',
-      parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // findFirst with ownership filter returns null
+    prismaMock.folder.findFirst.mockResolvedValue(null);
 
-    prismaMock.folder.findFirst.mockResolvedValue(existingFolder);
-    prismaMock.folder.findMany.mockResolvedValue([createMockPrismaFolder({ name: 'Duplicate' })]);
-    (validateFolderName as jest.Mock).mockReturnValue({
-      valid: false,
-      error: 'Name already exists',
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'New Name' }),
     });
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Duplicate' }),
-      }
-    );
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
-    });
-
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     const data = await response.json();
-    expect(data.error).toBe('Name already exists');
+    expect(data.error).toBe('Folder not found');
   });
 
-  it('should return 400 for invalid input', async () => {
+  it('should return 400 if name is empty', async () => {
     (auth as jest.Mock).mockResolvedValue(mockSession);
 
-    // The API first checks if folder exists, so we need to mock that
-    const existingFolder = {
-      id: 'clh0e8r5k0000jw0c8y5d6fld1',
-      name: 'Old Name',
-      folioId: 'clh0e8r5k0000jw0c8y5d6fol1',
-      parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    prismaMock.folder.findFirst.mockResolvedValue(existingFolder);
-
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: '' }),
-      }
-    );
-
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: '' }),
     });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(400);
     const data = await response.json();
     expect(data.error).toBe('Invalid input');
   });
 
+  it('should return 400 if name exceeds 255 characters', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    const longName = 'a'.repeat(256);
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: longName }),
+    });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toBe('Invalid input');
+  });
+
+  it('should successfully update folder name without validation if name unchanged', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Projects',
+      folioId: 'folio-1',
+      parentId: null,
+    } as any);
+
+    prismaMock.folder.update.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Projects',
+      folioId: 'folio-1',
+      parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'Projects' }), // Same name
+    });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.data.name).toBe('Projects');
+
+    // Validation should not be called if name unchanged
+    expect(validateFolderName).not.toHaveBeenCalled();
+  });
+
+  it('should validate and update folder name if changed', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Old Name',
+      folioId: 'folio-1',
+      parentId: null,
+    } as any);
+
+    prismaMock.folder.findMany.mockResolvedValue([
+      { name: 'Existing Folder' },
+    ] as any);
+
+    (validateFolderName as jest.Mock).mockReturnValue({ valid: true });
+
+    prismaMock.folder.update.mockResolvedValue({
+      id: 'folder-1',
+      name: 'New Name',
+      folioId: 'folio-1',
+      parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'New Name' }),
+    });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.data.name).toBe('New Name');
+
+    expect(validateFolderName).toHaveBeenCalledWith('New Name', ['Existing Folder']);
+  });
+
+  it('should return 400 if name validation fails', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Old Name',
+      folioId: 'folio-1',
+      parentId: null,
+    } as any);
+
+    prismaMock.folder.findMany.mockResolvedValue([
+      { name: 'Conflicting Name' },
+    ] as any);
+
+    (validateFolderName as jest.Mock).mockReturnValue({
+      valid: false,
+      error: 'Folder name already exists',
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'Conflicting Name' }),
+    });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toBe('Folder name already exists');
+  });
+
+  it('should trim whitespace from name', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Old Name',
+      folioId: 'folio-1',
+      parentId: null,
+    } as any);
+
+    prismaMock.folder.findMany.mockResolvedValue([]);
+
+    (validateFolderName as jest.Mock).mockReturnValue({ valid: true });
+
+    prismaMock.folder.update.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Trimmed Name',
+      folioId: 'folio-1',
+      parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: '  Trimmed Name  ' }),
+    });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(200);
+
+    expect(prismaMock.folder.update).toHaveBeenCalledWith({
+      where: { id: 'folder-1' },
+      data: { name: 'Trimmed Name' },
+      select: expect.any(Object),
+    });
+  });
+
   it('should handle database errors gracefully', async () => {
     (auth as jest.Mock).mockResolvedValue(mockSession);
 
-    prismaMock.folder.findFirst.mockRejectedValue(new Error('Database error'));
+    prismaMock.folder.findFirst.mockRejectedValue(new Error('Database connection failed'));
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Updated Name' }),
-      }
-    );
-
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'New Name' }),
     });
+
+    const response = await PATCH(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(500);
     const data = await response.json();
@@ -201,6 +271,11 @@ describe('PATCH /api/folders/[id]', () => {
 });
 
 describe('DELETE /api/folders/[id]', () => {
+  const mockSession = {
+    user: { id: 'user-1', email: 'owner@example.com', name: 'Owner' },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -208,144 +283,127 @@ describe('DELETE /api/folders/[id]', () => {
   it('should return 401 if not authenticated', async () => {
     (auth as jest.Mock).mockResolvedValue(null);
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'DELETE',
-      }
-    );
-
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'DELETE',
     });
+
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(401);
     const data = await response.json();
     expect(data.error).toBe('Unauthorized');
   });
 
-  it('should delete folder successfully', async () => {
+  it('should return 404 if folder does not exist', async () => {
     (auth as jest.Mock).mockResolvedValue(mockSession);
-
-    const existingFolder = {
-      id: 'clh0e8r5k0000jw0c8y5d6fld1',
-      name: 'Test Folder',
-      folioId: 'clh0e8r5k0000jw0c8y5d6fol1',
-      parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      _count: {
-        children: 0,
-        notes: 0,
-      },
-    };
-
-    prismaMock.folder.findFirst.mockResolvedValue(existingFolder);
-    prismaMock.folder.delete.mockResolvedValue(existingFolder);
-
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'DELETE',
-      }
-    );
-
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
-    });
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.data.success).toBe(true);
-    expect(data.message).toBe('Folder deleted successfully');
-  });
-
-  it('should delete folder with children and notes (cascade)', async () => {
-    (auth as jest.Mock).mockResolvedValue(mockSession);
-
-    const existingFolder = {
-      id: 'clh0e8r5k0000jw0c8y5d6fld1',
-      name: 'Parent Folder',
-      folioId: 'clh0e8r5k0000jw0c8y5d6fol1',
-      parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      _count: {
-        children: 2,
-        notes: 5,
-      },
-    };
-
-    prismaMock.folder.findFirst.mockResolvedValue(existingFolder);
-    prismaMock.folder.delete.mockResolvedValue(existingFolder);
-
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'DELETE',
-      }
-    );
-
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
-    });
-
-    expect(response.status).toBe(200);
-    expect(prismaMock.folder.delete).toHaveBeenCalledWith({
-      where: { id: 'clh0e8r5k0000jw0c8y5d6fld1' },
-    });
-  });
-
-  it('should return 404 if folder not found', async () => {
-    (auth as jest.Mock).mockResolvedValue(mockSession);
-
     prismaMock.folder.findFirst.mockResolvedValue(null);
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/nonexistent',
-      {
-        method: 'DELETE',
-      }
-    );
-
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'nonexistent' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'DELETE',
     });
+
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(404);
     const data = await response.json();
     expect(data.error).toBe('Folder not found');
   });
 
-  it('should handle database errors gracefully', async () => {
+  it('should return 404 if user does not own folder', async () => {
     (auth as jest.Mock).mockResolvedValue(mockSession);
 
-    const existingFolder = {
-      id: 'clh0e8r5k0000jw0c8y5d6fld1',
-      name: 'Test Folder',
-      folioId: 'clh0e8r5k0000jw0c8y5d6fol1',
+    // findFirst with ownership filter returns null
+    prismaMock.folder.findFirst.mockResolvedValue(null);
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'DELETE',
+    });
+
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(404);
+    const data = await response.json();
+    expect(data.error).toBe('Folder not found');
+  });
+
+  it('should successfully delete empty folder', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Empty Folder',
+      folioId: 'folio-1',
       parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       _count: {
         children: 0,
         notes: 0,
       },
-    };
+    } as any);
 
-    prismaMock.folder.findFirst.mockResolvedValue(existingFolder);
-    prismaMock.folder.delete.mockRejectedValue(new Error('Database error'));
+    prismaMock.folder.delete.mockResolvedValue({
+      id: 'folder-1',
+    } as any);
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/folders/clh0e8r5k0000jw0c8y5d6fld1',
-      {
-        method: 'DELETE',
-      }
-    );
-
-    const response = await DELETE(request, {
-      params: Promise.resolve({ id: 'clh0e8r5k0000jw0c8y5d6fld1' }),
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'DELETE',
     });
+
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.data.success).toBe(true);
+    expect(data.message).toBe('Folder deleted successfully');
+
+    expect(prismaMock.folder.delete).toHaveBeenCalledWith({
+      where: { id: 'folder-1' },
+    });
+  });
+
+  it('should delete folder with children (cascade)', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockResolvedValue({
+      id: 'folder-1',
+      name: 'Parent Folder',
+      folioId: 'folio-1',
+      parentId: null,
+      _count: {
+        children: 3,
+        notes: 2,
+      },
+    } as any);
+
+    prismaMock.folder.delete.mockResolvedValue({
+      id: 'folder-1',
+    } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'DELETE',
+    });
+
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'folder-1' }) });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.data.success).toBe(true);
+
+    // Cascade delete handled by Prisma
+    expect(prismaMock.folder.delete).toHaveBeenCalledWith({
+      where: { id: 'folder-1' },
+    });
+  });
+
+  it('should handle database errors gracefully', async () => {
+    (auth as jest.Mock).mockResolvedValue(mockSession);
+
+    prismaMock.folder.findFirst.mockRejectedValue(new Error('Database connection failed'));
+
+    const request = new NextRequest('http://localhost:3000/api/folders/folder-1', {
+      method: 'DELETE',
+    });
+
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'folder-1' }) });
 
     expect(response.status).toBe(500);
     const data = await response.json();

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { countWords } from '@/lib/editor/text-manipulation';
 import type { RephraseResponse, SummarizeResponse, FixGrammarResponse } from '@/types';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export interface UseAIFeaturesOptions {
   activeNoteId: string | null;
@@ -68,7 +69,7 @@ export function useAIFeatures({
         setOriginalText(selectedText);
 
         try {
-          const response = await fetch('/api/ai/rephrase', {
+          const response = await fetchWithCsrf('/api/ai/rephrase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -128,7 +129,7 @@ export function useAIFeatures({
         setOriginalText(selectedText);
 
         try {
-          const response = await fetch('/api/ai/summarize', {
+          const response = await fetchWithCsrf('/api/ai/summarize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -181,7 +182,7 @@ export function useAIFeatures({
         setOriginalText(selectedText);
 
         try {
-          const response = await fetch('/api/ai/fix-grammar', {
+          const response = await fetchWithCsrf('/api/ai/fix-grammar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

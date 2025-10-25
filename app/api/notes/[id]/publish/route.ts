@@ -5,6 +5,7 @@ import {
   generateSlugFromTitle,
   generateUniqueSlug,
 } from '@/lib/slug-generator';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 /**
  * POST /api/notes/[id]/publish
@@ -13,10 +14,10 @@ import {
  * Authentication: Required
  * Authorization: Note owner only
  */
-export async function POST(
+export const POST = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     // Authenticate user
     const session = await auth();
@@ -153,7 +154,7 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * DELETE /api/notes/[id]/publish
@@ -162,10 +163,10 @@ export async function POST(
  * Authentication: Required
  * Authorization: Note owner only
  */
-export async function DELETE(
+export const DELETE = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     // Authenticate user
     const session = await auth();
@@ -244,6 +245,6 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';

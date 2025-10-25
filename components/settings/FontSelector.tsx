@@ -4,6 +4,7 @@ import { useFont } from '@/lib/context/FontContext';
 import { cn } from '@/lib/utils';
 import { Type, BookText, Accessibility } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 type FontPreference = 'sans' | 'serif' | 'dyslexic';
 
@@ -46,7 +47,7 @@ export function FontSelector() {
     // Only sync to database if user is authenticated
     if (session?.user) {
       try {
-        const response = await fetch('/api/user/preferences', {
+        const response = await fetchWithCsrf('/api/user/preferences', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fontPreference: newFont }),

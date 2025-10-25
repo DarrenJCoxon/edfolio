@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import type { SpellingPreference } from '@/types';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export function SpellingSettings() {
   const [preference, setPreference] = useState<SpellingPreference>('UK');
@@ -39,7 +40,7 @@ export function SpellingSettings() {
     setPreference(value);
 
     try {
-      const response = await fetch('/api/settings/spelling', {
+      const response = await fetchWithCsrf('/api/settings/spelling', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ spellingPreference: value })

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ClonePageRequest } from '@/types';
 import { z } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 // Extended validation schema for clone request
 const cloneRequestSchema = z.object({
@@ -14,10 +15,10 @@ const cloneRequestSchema = z.object({
  * POST /api/notes/[id]/clone
  * Clone a note to user's vault (requires edit permission via share or ownership)
  */
-export async function POST(
+export const POST = withCsrfProtection(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const session = await auth();
 
@@ -132,4 +133,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { UnpublishConfirmDialog } from './UnpublishConfirmDialog';
 import { ShareManagementModal } from '@/components/publish/ShareManagementModal';
 import type { PublishButtonProps } from '@/types';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 /**
  * PublishButton Component
@@ -29,7 +30,7 @@ export function PublishButton({
   const handlePublish = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/notes/${noteId}/publish`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/publish`, {
         method: 'POST',
       });
 
@@ -69,7 +70,7 @@ export function PublishButton({
     setShowUnpublishDialog(false);
 
     try {
-      const response = await fetch(`/api/notes/${noteId}/publish`, {
+      const response = await fetchWithCsrf(`/api/notes/${noteId}/publish`, {
         method: 'DELETE',
       });
 

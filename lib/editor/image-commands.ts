@@ -10,6 +10,7 @@ import {
   type SlashCommandItem,
   type CommandActionParams,
 } from './slash-commands/types';
+import { fetchWithCsrf } from '@/lib/fetch-with-csrf';
 
 export const imageCommands: SlashCommandItem[] = [
   {
@@ -43,7 +44,7 @@ export const imageCommands: SlashCommandItem[] = [
             formData.append('noteId', 'temp');
 
             // Upload image
-            const response = await fetch('/api/upload', {
+            const response = await fetchWithCsrf('/api/upload', {
               method: 'POST',
               body: formData,
             });

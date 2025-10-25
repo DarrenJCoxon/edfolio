@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { withCsrfProtection } from '@/lib/api/csrf-validation';
 
 const createFolioSchema = z.object({
   name: z.string().min(1, 'Folio name is required').max(100),
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrfProtection(async (request: NextRequest) => {
   try {
     // Authenticate user
     const session = await auth();
@@ -122,6 +123,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 export const runtime = 'nodejs';
